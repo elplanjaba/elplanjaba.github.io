@@ -93,8 +93,8 @@
       object-fit: contain;
     }
 
-    /* Texto de respaldo: aparece si la imagen no carga. */
-    .brand-fallback { display: none; }
+    /* Mantiene visibles el nombre y el logo al mismo tiempo. */
+    .brand-fallback { display: inline-flex; color: #0b1628; white-space: nowrap; }
     .brand-fallback span { color: var(--red); }
 
     .search {
@@ -475,7 +475,8 @@
 
     @media (max-width: 560px) {
       header { padding: 15px 4%; gap: 12px; }
-      .brand img { max-width: 175px; max-height: 58px; }\n      .brand { font-size: 21px; }
+      .brand img { max-width: 175px; max-height: 58px; }
+      .brand { font-size: 21px; }
       .search { order: 3; flex-basis: 100%; max-width: none; }
       .account-actions { order: 4; width: 100%; }
       .account-button { flex: 1; }
