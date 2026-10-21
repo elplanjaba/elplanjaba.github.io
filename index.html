@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>El Plan Jaba | Tu mercado de confianza</title>
+  <meta name="description" content="El Plan Jaba: alimentos, higiene, limpieza y artículos para el hogar. ¡Resuelve tu compra con nosotros!">
+
+  <style>
+    /* Colores principales de la marca */
+    :root {
+      --rojo: #d94735;
+      --amarillo: #ffd166;
+      --verde: #28664b;
+      --crema: #fff8e9;
+      --oscuro: #28271f;
+    }
+
+    /* Configuración general */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--crema);
+      color: var(--oscuro);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Encabezado */
+    header {
+      background: var(--verde);
+      color: white;
+      padding: 16px 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: var(--amarillo);
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      color: var(--amarillo);
+    }
+
+    /* Portada principal */
+    .hero {
+      padding: 75px 7%;
+      text-align: center;
+      background: var(--amarillo);
+      border-bottom: 5px solid var(--oscuro);
+    }
+
+    .etiqueta {
+      display: inline-block;
+      background: var(--verde);
+      color: white;
+      padding: 6px 15px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(38px, 7vw, 70px);
+      line-height: 1.05;
+      font-weight: 900;
+      max-width: 850px;
+      margin: 0 auto 20px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto 28px;
+    }
+
+    .boton {
+      display: inline-block;
+      padding: 13px 24px;
+      background: var(--rojo);
+      color: white;
+      border: 2px solid var(--oscuro);
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 4px 4px 0 var(--oscuro);
+      transition: transform 0.2s;
+    }
+
+    .boton:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--oscuro);
+    }
+
+    /* Categorías */
+    section {
+      padding: 60px 7%;
+    }
+
+    .titulo-seccion {
+      text-align: center;
+      font-size: clamp(28px, 4vw, 40px);
+      margin-bottom: 12px;
+      font-weight: 900;
+    }
+
+    .subtitulo {
+      text-align: center;
+      margin: 0 auto 35px;
+      max-width: 600px;
+    }
+
+    .categorias {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .categoria {
+      background: white;
+      border: 2px solid var(--oscuro);
+      border-radius: 12px;
+      padding: 25px 12px;
+      text-align: center;
+      box-shadow: 4px 4px 0 var(--oscuro);
+    }
+
+    .categoria .icono {
+      font-size: 42px;
+      margin-bottom: 8px;
+    }
+
+    .categoria h3 {
+      font-size: 17px;
+      margin-bottom: 5px;
+    }
+
+    .categoria p {
+      font-size: 13px;
+    }
+
+    /* Franja promocional */
+    .promo {
+      background: var(--rojo);
+      color: white;
+      text-align: center;
+    }
+
+    .promo h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      margin-bottom: 12px;
+    }
+
+    .promo p {
+      margin-bottom: 22px;
+    }
+
+    .promo .boton {
+      background: var(--amarillo);
+      color: var(--oscuro);
+    }
+
+    /* Contacto */
+    .contacto {
+      text-align: center;
+    }
+
+    .contacto p {
+      margin: 12px auto 25px;
+      max-width: 550px;
+    }
+
+    /* Pie de página */
+    footer {
+      background: var(--oscuro);
+      color: white;
+      text-align: center;
+      padding: 25px 15px;
+      font-size: 13px;
+    }
+
+    footer strong {
+      color: var(--amarillo);
+    }
+
+    /* Adaptación a móviles */
+    @media (max-width: 700px) {
+      header {
+        justify-content: center;
+        text-align: center;
+      }
+
+      nav {
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .hero {
+        padding: 55px 6%;
+      }
+
+      section {
+        padding: 45px 6%;
+      }
+
+      .categorias {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Encabezado y navegación -->
+  <header>
+    <a href="#" class="logo">EL PLAN <span>JABA</span> 🛍️</a>
+
+    <nav>
+      <a href="#inicio">Inicio</a>
+      <a href="#categorias">Productos</a>
+      <a href="#ofertas">Ofertas</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Portada -->
+    <section class="hero" id="inicio">
+      <span class="etiqueta">¡Tu mercado, a tu manera!</span>
+
+      <h1>¡Que no te coja el día sin tu jaba!</h1>
+
+      <p>
+        Alimentos, productos de limpieza, higiene y mucho más.
+        Nosotros ponemos los productos; tú pones la jaba.
+      </p>
+
+      <a href="#categorias" class="boton">EXPLORAR PRODUCTOS →</a>
+    </section>
+
+    <!-- Categorías del mercado -->
+    <section id="categorias">
+      <h2 class="titulo-seccion">¿Qué necesitas hoy?</h2>
+
+      <p class="subtitulo">
+        Busca lo que te hace falta y prepara tu próxima compra.
+      </p>
+
+      <div class="categorias">
+        <article class="categoria">
+          <div class="icono">🥫</div>
+          <h3>Alimentos</h3>
+          <p>Lo bueno para tu mesa.</p>
+        </article>
+
+        <article class="categoria">
+          <div class="icono">🧼</div>
+          <h3>Limpieza</h3>
+          <p>Todo limpio y reluciente.</p>
+        </article>
+
+        <article class="categoria">
+          <div class="icono">🪥</div>
+          <h3>Higiene personal</h3>
+          <p>Cuídate como mereces.</p>
+        </article>
+
+        <article class="categoria">
+          <div class="icono">🏠</div>
+          <h3>Hogar</h3>
+          <p>Soluciones para la casa.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Promociones -->
+    <section class="promo" id="ofertas">
+      <h2>¡Atento a las ofertas!</h2>
+
+      <p>
+        Las buenas oportunidades no esperan.
+        Próximamente encontrarás aquí nuestras promociones.
+      </p>
+
+      <a href="#contacto" class="boton">QUIERO SABER MÁS</a>
+    </section>
+
+    <!-- Contacto -->
+    <section class="contacto" id="contacto">
+      <h2 class="titulo-seccion">¡Vamos a resolver!</h2>
+
+      <p>
+        Estamos preparando nuestro mercado.
+        Muy pronto podrás consultar productos y realizar tus pedidos.
+      </p>
+
+      <a href="https://wa.me/" class="boton">
+        PRÓXIMAMENTE POR WHATSAPP
+      </a>
+    </section>
+  </main>
+
+  <!-- Pie de página -->
+  <footer>
+    <p><strong>EL PLAN JABA</strong> · ¡Aquí el plan es resolver!</p>
+    <p>© 2026 El Plan Jaba. Todos los derechos reservados.</p>
+  </footer>
+
+</body>
+</html>
