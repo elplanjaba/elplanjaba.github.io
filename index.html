@@ -3,343 +3,723 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>El Plan Jaba | Tu mercado de confianza</title>
-  <meta name="description" content="El Plan Jaba: alimentos, higiene, limpieza y artículos para el hogar. ¡Resuelve tu compra con nosotros!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>El Plan Jaba | Tienda online</title>
+  <meta name="description" content="Compra alimentos, higiene, limpieza y artículos para el hogar en El Plan Jaba.">
 
   <style>
-    /* Colores principales de la marca */
     :root {
-      --rojo: #d94735;
-      --amarillo: #ffd166;
-      --verde: #28664b;
-      --crema: #fff8e9;
-      --oscuro: #28271f;
+      --green: #28664b;
+      --dark: #233b2e;
+      --red: #d94735;
+      --yellow: #ffd166;
+      --cream: #fff8e9;
+      --white: #ffffff;
+      --border: #e9e3d7;
+      --muted: #716f67;
     }
 
-    /* Configuración general */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--crema);
-      color: var(--oscuro);
+      background: #fffdf8;
+      color: var(--dark);
       font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.6;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
 
-    /* Encabezado */
-    header {
-      background: var(--verde);
+    .announcement {
+      background: var(--dark);
       color: white;
-      padding: 16px 6%;
+      text-align: center;
+      padding: 9px;
+      font-size: 12px;
+      letter-spacing: .4px;
+    }
+
+    header {
+      background: var(--cream);
+      padding: 18px 5%;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 20px;
       flex-wrap: wrap;
-      gap: 15px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .logo {
-      font-size: 25px;
+    .brand {
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: -1px;
     }
 
-    .logo span {
-      color: var(--amarillo);
-    }
+    .brand span { color: var(--red); }
 
-    nav {
+    .search {
+      flex: 1;
+      max-width: 440px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      font-size: 14px;
-      font-weight: bold;
+      border: 1px solid #d8d2c6;
+      border-radius: 9px;
+      overflow: hidden;
+      background: white;
     }
 
-    nav a:hover {
-      color: var(--amarillo);
+    .search input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      padding: 12px;
     }
 
-    /* Portada principal */
-    .hero {
-      padding: 75px 7%;
-      text-align: center;
-      background: var(--amarillo);
-      border-bottom: 5px solid var(--oscuro);
+    .search button {
+      border: 0;
+      padding: 0 15px;
+      background: var(--yellow);
     }
 
-    .etiqueta {
-      display: inline-block;
-      background: var(--verde);
+    .cart-button {
+      background: var(--green);
       color: white;
-      padding: 6px 15px;
-      border-radius: 30px;
-      font-size: 13px;
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 16px;
       font-weight: bold;
-      margin-bottom: 20px;
+    }
+
+    .hero {
+      margin: 25px 5% 30px;
+      background: var(--yellow);
+      border: 2px solid var(--dark);
+      border-radius: 18px;
+      padding: 48px 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+      overflow: hidden;
+    }
+
+    .hero-copy { max-width: 580px; }
+
+    .eyebrow {
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      font-size: clamp(38px, 7vw, 70px);
-      line-height: 1.05;
-      font-weight: 900;
-      max-width: 850px;
-      margin: 0 auto 20px;
+      font-size: clamp(36px, 5vw, 60px);
+      line-height: 1.04;
+      margin-bottom: 15px;
+      letter-spacing: -2px;
     }
 
     .hero p {
-      font-size: 18px;
-      max-width: 600px;
-      margin: 0 auto 28px;
+      font-size: 16px;
+      line-height: 1.7;
+      margin-bottom: 23px;
+      max-width: 460px;
     }
 
-    .boton {
+    .primary-button {
       display: inline-block;
-      padding: 13px 24px;
-      background: var(--rojo);
+      background: var(--red);
       color: white;
-      border: 2px solid var(--oscuro);
+      border: 2px solid var(--dark);
       border-radius: 8px;
+      padding: 13px 19px;
       font-weight: bold;
-      box-shadow: 4px 4px 0 var(--oscuro);
-      transition: transform 0.2s;
     }
 
-    .boton:hover {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0 var(--oscuro);
+    .hero-art {
+      font-size: clamp(90px, 15vw, 170px);
+      transform: rotate(-8deg);
+      flex-shrink: 0;
     }
 
-    /* Categorías */
-    section {
-      padding: 60px 7%;
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 0 5% 40px;
     }
 
-    .titulo-seccion {
-      text-align: center;
-      font-size: clamp(28px, 4vw, 40px);
-      margin-bottom: 12px;
-      font-weight: 900;
+    .benefit {
+      padding: 17px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
     }
 
-    .subtitulo {
-      text-align: center;
-      margin: 0 auto 35px;
-      max-width: 600px;
+    .benefit-icon { font-size: 25px; }
+    .benefit strong { display: block; font-size: 13px; }
+    .benefit small { color: var(--muted); font-size: 11px; }
+
+    .store-section { padding: 15px 5% 60px; }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
     }
 
-    .categorias {
+    .section-heading h2 {
+      font-size: clamp(25px, 4vw, 34px);
+      letter-spacing: -1px;
+    }
+
+    .section-heading p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .categories {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .category-button {
+      border: 1px solid var(--border);
+      background: white;
+      padding: 10px 15px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .category-button.active {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+
+    .product-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 18px;
     }
 
-    .categoria {
+    .product-card {
       background: white;
-      border: 2px solid var(--oscuro);
-      border-radius: 12px;
-      padding: 25px 12px;
-      text-align: center;
-      box-shadow: 4px 4px 0 var(--oscuro);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
     }
 
-    .categoria .icono {
-      font-size: 42px;
-      margin-bottom: 8px;
+    .product-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 20px #233b2e12;
     }
 
-    .categoria h3 {
-      font-size: 17px;
+    .product-art {
+      height: 155px;
+      display: grid;
+      place-items: center;
+      font-size: 65px;
+      background: var(--cream);
+      position: relative;
+    }
+
+    .product-label {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      font-size: 10px;
+      font-weight: bold;
+      color: white;
+      background: var(--red);
+      padding: 5px 8px;
+      border-radius: 5px;
+    }
+
+    .product-info { padding: 15px; }
+
+    .product-category {
+      color: var(--muted);
+      font-size: 11px;
       margin-bottom: 5px;
     }
 
-    .categoria p {
-      font-size: 13px;
+    .product-info h3 {
+      font-size: 15px;
+      min-height: 38px;
+      line-height: 1.4;
     }
 
-    /* Franja promocional */
-    .promo {
-      background: var(--rojo);
+    .price {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 12px 0;
+      color: var(--green);
+    }
+
+    .add-button {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--green);
+      color: var(--green);
+      background: white;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .add-button:hover {
+      background: var(--green);
       color: white;
+    }
+
+    .empty {
+      padding: 35px;
       text-align: center;
+      color: var(--muted);
+      grid-column: 1 / -1;
     }
 
-    .promo h2 {
-      font-size: clamp(28px, 4vw, 42px);
-      margin-bottom: 12px;
+    .jaba-banner {
+      margin: 0 5% 55px;
+      padding: 35px 6%;
+      background: var(--green);
+      color: white;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
     }
 
-    .promo p {
-      margin-bottom: 22px;
-    }
+    .jaba-banner h2 { font-size: 28px; margin-bottom: 7px; }
+    .jaba-banner p { font-size: 14px; line-height: 1.6; }
+    .jaba-banner .hero-art { font-size: 70px; }
 
-    .promo .boton {
-      background: var(--amarillo);
-      color: var(--oscuro);
-    }
-
-    /* Contacto */
-    .contacto {
-      text-align: center;
-    }
-
-    .contacto p {
-      margin: 12px auto 25px;
-      max-width: 550px;
-    }
-
-    /* Pie de página */
     footer {
-      background: var(--oscuro);
+      background: var(--dark);
       color: white;
-      text-align: center;
-      padding: 25px 15px;
+      padding: 30px 5%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 20px;
       font-size: 13px;
     }
 
-    footer strong {
-      color: var(--amarillo);
+    footer p { color: #e3e8df; margin-top: 7px; }
+
+    /* Panel del carrito */
+    .cart-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: #0007;
+      display: none;
+      justify-content: flex-end;
     }
 
-    /* Adaptación a móviles */
-    @media (max-width: 700px) {
-      header {
-        justify-content: center;
-        text-align: center;
-      }
+    .cart-overlay.open { display: flex; }
 
-      nav {
-        justify-content: center;
-        gap: 12px;
-      }
+    .cart-panel {
+      background: white;
+      width: min(420px, 100%);
+      height: 100%;
+      overflow-y: auto;
+      padding: 23px;
+      display: flex;
+      flex-direction: column;
+    }
 
-      .hero {
-        padding: 55px 6%;
-      }
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
 
-      section {
-        padding: 45px 6%;
-      }
+    .close-cart {
+      background: transparent;
+      border: 0;
+      font-size: 26px;
+    }
 
-      .categorias {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-      }
+    .cart-items { flex: 1; padding: 15px 0; }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-item small { display: block; color: var(--muted); margin-top: 5px; }
+
+    .quantity {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .quantity button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      border-radius: 5px;
+    }
+
+    .cart-total {
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    .cart-total p { font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+
+    .checkout {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 8px;
+      color: white;
+      background: var(--green);
+      font-weight: bold;
+    }
+
+    .cart-empty { text-align: center; padding: 40px 10px; }
+
+    @media (max-width: 850px) {
+      .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-art { font-size: 95px; }
+      .benefits { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      header { padding: 15px 4%; gap: 12px; }
+      .brand { font-size: 21px; }
+      .search { order: 3; flex-basis: 100%; max-width: none; }
+      .hero { margin: 16px 4% 24px; padding: 30px 6%; }
+      .hero-art { display: none; }
+      .hero p { font-size: 14px; }
+      .store-section { padding: 10px 4% 40px; }
+      .product-grid { gap: 10px; }
+      .product-art { height: 120px; font-size: 50px; }
+      .product-info { padding: 11px; }
+      .product-info h3 { font-size: 13px; }
+      .jaba-banner { margin: 0 4% 35px; padding: 25px; }
     }
   </style>
 </head>
 
 <body>
+  <div class="announcement">
+    🛍️ EL PLAN JABA · ¡Tu compra, tu ritmo, tu mercado!
+  </div>
 
-  <!-- Encabezado y navegación -->
   <header>
-    <a href="#" class="logo">EL PLAN <span>JABA</span> 🛍️</a>
+    <a href="#" class="brand">EL PLAN <span>JABA</span> 🛍️</a>
 
-    <nav>
-      <a href="#inicio">Inicio</a>
-      <a href="#categorias">Productos</a>
-      <a href="#ofertas">Ofertas</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
+    <form class="search" id="search-form">
+      <input id="search-input" type="search"
+             placeholder="¿Qué necesitas hoy?"
+             aria-label="Buscar productos">
+      <button aria-label="Buscar">🔎</button>
+    </form>
+
+    <button class="cart-button" id="open-cart">
+      🛒 Mi jaba (<span id="cart-count">0</span>)
+    </button>
   </header>
 
   <main>
-    <!-- Portada -->
-    <section class="hero" id="inicio">
-      <span class="etiqueta">¡Tu mercado, a tu manera!</span>
-
-      <h1>¡Que no te coja el día sin tu jaba!</h1>
-
-      <p>
-        Alimentos, productos de limpieza, higiene y mucho más.
-        Nosotros ponemos los productos; tú pones la jaba.
-      </p>
-
-      <a href="#categorias" class="boton">EXPLORAR PRODUCTOS →</a>
-    </section>
-
-    <!-- Categorías del mercado -->
-    <section id="categorias">
-      <h2 class="titulo-seccion">¿Qué necesitas hoy?</h2>
-
-      <p class="subtitulo">
-        Busca lo que te hace falta y prepara tu próxima compra.
-      </p>
-
-      <div class="categorias">
-        <article class="categoria">
-          <div class="icono">🥫</div>
-          <h3>Alimentos</h3>
-          <p>Lo bueno para tu mesa.</p>
-        </article>
-
-        <article class="categoria">
-          <div class="icono">🧼</div>
-          <h3>Limpieza</h3>
-          <p>Todo limpio y reluciente.</p>
-        </article>
-
-        <article class="categoria">
-          <div class="icono">🪥</div>
-          <h3>Higiene personal</h3>
-          <p>Cuídate como mereces.</p>
-        </article>
-
-        <article class="categoria">
-          <div class="icono">🏠</div>
-          <h3>Hogar</h3>
-          <p>Soluciones para la casa.</p>
-        </article>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">¡Bienvenido al mercado!</div>
+        <h1>Arma tu jaba y resuelve.</h1>
+        <p>
+          Alimentos, limpieza, higiene y artículos para el hogar.
+          Busca tus productos favoritos y prepara tu compra.
+        </p>
+        <a href="#catalogo" class="primary-button">EXPLORAR TIENDA ↓</a>
       </div>
+      <div class="hero-art" aria-hidden="true">🛍️</div>
     </section>
 
-    <!-- Promociones -->
-    <section class="promo" id="ofertas">
-      <h2>¡Atento a las ofertas!</h2>
+    <div class="benefits">
+      <div class="benefit">
+        <span class="benefit-icon">🛒</span>
+        <div><strong>Compra a tu manera</strong><small>Explora nuestro catálogo</small></div>
+      </div>
+      <div class="benefit">
+        <span class="benefit-icon">🏷️</span>
+        <div><strong>Ofertas y novedades</strong><small>Descubre lo destacado</small></div>
+      </div>
+      <div class="benefit">
+        <span class="benefit-icon">📦</span>
+        <div><strong>Prepara tu pedido</strong><small>Consulta disponibilidad</small></div>
+      </div>
+    </div>
 
-      <p>
-        Las buenas oportunidades no esperan.
-        Próximamente encontrarás aquí nuestras promociones.
-      </p>
+    <section class="store-section" id="catalogo">
+      <div class="section-heading">
+        <div>
+          <h2>Explora nuestros productos</h2>
+          <p>Encuentra lo que necesitas para tu casa y tu familia.</p>
+        </div>
+      </div>
 
-      <a href="#contacto" class="boton">QUIERO SABER MÁS</a>
+      <div class="categories" id="categories">
+        <button class="category-button active" data-category="Todos">Todos</button>
+        <button class="category-button" data-category="Alimentos">🥫 Alimentos</button>
+        <button class="category-button" data-category="Limpieza">🧼 Limpieza</button>
+        <button class="category-button" data-category="Higiene">🪥 Higiene</button>
+        <button class="category-button" data-category="Hogar">🏠 Hogar</button>
+      </div>
+
+      <div class="product-grid" id="product-grid"></div>
     </section>
 
-    <!-- Contacto -->
-    <section class="contacto" id="contacto">
-      <h2 class="titulo-seccion">¡Vamos a resolver!</h2>
-
-      <p>
-        Estamos preparando nuestro mercado.
-        Muy pronto podrás consultar productos y realizar tus pedidos.
-      </p>
-
-      <a href="https://wa.me/" class="boton">
-        PRÓXIMAMENTE POR WHATSAPP
-      </a>
+    <section class="jaba-banner">
+      <div>
+        <h2>La jaba no se llena sola. 😄</h2>
+        <p>Estamos preparando nuestro catálogo para que tu compra sea más fácil.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">🧺</div>
     </section>
   </main>
 
-  <!-- Pie de página -->
   <footer>
-    <p><strong>EL PLAN JABA</strong> · ¡Aquí el plan es resolver!</p>
-    <p>© 2026 El Plan Jaba. Todos los derechos reservados.</p>
+    <div>
+      <strong>EL PLAN JABA 🛍️</strong>
+      <p>¡Aquí el plan es resolver!</p>
+    </div>
+    <div>
+      <strong>Atención al cliente</strong>
+      <p>Los datos de contacto se añadirán próximamente.</p>
+    </div>
+    <div>
+      <strong>Información</strong>
+      <p>Catálogo en preparación · © 2026</p>
+    </div>
   </footer>
 
+  <div class="cart-overlay" id="cart-overlay" aria-hidden="true">
+    <aside class="cart-panel" role="dialog" aria-modal="true" aria-label="Mi jaba">
+      <div class="cart-header">
+        <h2>🛒 Mi jaba</h2>
+        <button class="close-cart" id="close-cart" aria-label="Cerrar carrito">×</button>
+      </div>
+      <div class="cart-items" id="cart-items"></div>
+      <div class="cart-total" id="cart-total"></div>
+    </aside>
+  </div>
+
+  <script>
+    // Productos demostrativos: aún no son el catálogo comercial real.
+    // Los precios y la disponibilidad se definirán antes de vender.
+    const products = [
+      { id: 1, name: "Arroz", category: "Alimentos", icon: "🍚", label: "Básico" },
+      { id: 2, name: "Frijoles", category: "Alimentos", icon: "🫘", label: "" },
+      { id: 3, name: "Aceite de cocina", category: "Alimentos", icon: "🫒", label: "" },
+      { id: 4, name: "Pasta", category: "Alimentos", icon: "🍝", label: "" },
+      { id: 5, name: "Detergente", category: "Limpieza", icon: "🧴", label: "Hogar" },
+      { id: 6, name: "Jabón de lavar", category: "Limpieza", icon: "🧼", label: "" },
+      { id: 7, name: "Pasta dental", category: "Higiene", icon: "🪥", label: "" },
+      { id: 8, name: "Champú", category: "Higiene", icon: "🧴", label: "" },
+      { id: 9, name: "Papel higiénico", category: "Higiene", icon: "🧻", label: "" },
+      { id: 10, name: "Utensilios de cocina", category: "Hogar", icon: "🍴", label: "" },
+      { id: 11, name: "Bolsas para basura", category: "Hogar", icon: "🗑️", label: "" },
+      { id: 12, name: "Esponja de limpieza", category: "Limpieza", icon: "🧽", label: "" }
+    ];
+
+    let selectedCategory = "Todos";
+    let searchTerm = "";
+    const cart = new Map();
+
+    const grid = document.getElementById("product-grid");
+    const cartOverlay = document.getElementById("cart-overlay");
+
+    // Muestra solo productos que coinciden con la categoría y búsqueda.
+    function renderProducts() {
+      const filtered = products.filter(product => {
+        const categoryMatch =
+          selectedCategory === "Todos" ||
+          product.category === selectedCategory;
+
+        const searchMatch =
+          product.name.toLowerCase().includes(searchTerm);
+
+        return categoryMatch && searchMatch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty">No encontramos productos con esa búsqueda.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(product => `
+        <article class="product-card">
+          <div class="product-art">
+            ${product.label ? `<span class="product-label">${product.label}</span>` : ""}
+            <span aria-hidden="true">${product.icon}</span>
+          </div>
+          <div class="product-info">
+            <div class="product-category">${product.category}</div>
+            <h3>${product.name}</h3>
+            <div class="price">Precio por confirmar</div>
+            <button class="add-button" data-add="${product.id}">
+              + Añadir a mi jaba
+            </button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    // Añade un producto o incrementa su cantidad en el carrito.
+    function addToCart(id) {
+      cart.set(id, (cart.get(id) || 0) + 1);
+      renderCart();
+    }
+
+    function renderCart() {
+      const count = [...cart.values()].reduce((sum, qty) => sum + qty, 0);
+      document.getElementById("cart-count").textContent = count;
+
+      const items = document.getElementById("cart-items");
+      const total = document.getElementById("cart-total");
+
+      if (cart.size === 0) {
+        items.innerHTML = `
+          <div class="cart-empty">
+            <div style="font-size:48px">🛒</div>
+            <h3>Tu jaba está vacía</h3>
+            <p>¡Vamos a buscar lo que necesitas!</p>
+          </div>`;
+        total.innerHTML = "";
+        return;
+      }
+
+      items.innerHTML = [...cart.entries()].map(([id, qty]) => {
+        const product = products.find(item => item.id === id);
+        return `
+          <div class="cart-item">
+            <div>
+              <strong>${product.icon} ${product.name}</strong>
+              <small>Precio pendiente de confirmar</small>
+              <div class="quantity">
+                <button data-change="${id}" data-delta="-1" aria-label="Restar">−</button>
+                <span>${qty}</span>
+                <button data-change="${id}" data-delta="1" aria-label="Añadir uno">+</button>
+              </div>
+            </div>
+            <button data-remove="${id}" aria-label="Eliminar ${product.name}"
+                    style="border:0;background:none">🗑️</button>
+          </div>`;
+      }).join("");
+
+      total.innerHTML = `
+        <p><strong>Total:</strong> pendiente de confirmar precios y disponibilidad.</p>
+        <p>Este carrito es una demostración. Los pedidos y pagos reales todavía no están conectados.</p>
+        <button class="checkout" id="prepare-order">Revisar mi pedido</button>`;
+    }
+
+    // Delegación de eventos para las tarjetas de productos.
+    grid.addEventListener("click", event => {
+      const button = event.target.closest("[data-add]");
+      if (button) addToCart(Number(button.dataset.add));
+    });
+
+    // Filtra por categoría.
+    document.getElementById("categories").addEventListener("click", event => {
+      const button = event.target.closest("[data-category]");
+      if (!button) return;
+
+      selectedCategory = button.dataset.category;
+
+      document.querySelectorAll(".category-button").forEach(item => {
+        item.classList.toggle("active", item === button);
+      });
+
+      renderProducts();
+    });
+
+    // Busca por nombre del producto.
+    document.getElementById("search-form").addEventListener("submit", event => {
+      event.preventDefault();
+      searchTerm = document.getElementById("search-input").value
+        .trim().toLowerCase();
+      renderProducts();
+      document.getElementById("catalogo").scrollIntoView({ behavior: "smooth" });
+    });
+
+    document.getElementById("search-input").addEventListener("input", event => {
+      searchTerm = event.target.value.trim().toLowerCase();
+      renderProducts();
+    });
+
+    // Controla cantidades y eliminación de productos.
+    document.getElementById("cart-items").addEventListener("click", event => {
+      const change = event.target.closest("[data-change]");
+      const remove = event.target.closest("[data-remove]");
+
+      if (remove) {
+        cart.delete(Number(remove.dataset.remove));
+      }
+
+      if (change) {
+        const id = Number(change.dataset.change);
+        const qty = (cart.get(id) || 0) + Number(change.dataset.delta);
+
+        if (qty <= 0) cart.delete(id);
+        else cart.set(id, qty);
+      }
+
+      renderCart();
+    });
+
+    // Abre y cierra el panel del carrito.
+    document.getElementById("open-cart").addEventListener("click", () => {
+      cartOverlay.classList.add("open");
+      cartOverlay.setAttribute("aria-hidden", "false");
+    });
+
+    function closeCart() {
+      cartOverlay.classList.remove("open");
+      cartOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    document.getElementById("close-cart").addEventListener("click", closeCart);
+
+    cartOverlay.addEventListener("click", event => {
+      if (event.target === cartOverlay) closeCart();
+    });
+
+    document.getElementById("cart-total").addEventListener("click", event => {
+      if (event.target.id === "prepare-order") {
+        alert("Tu carrito está preparado. En la siguiente etapa configuraremos los precios y la forma de enviar pedidos.");
+      }
+    });
+
+    renderProducts();
+    renderCart();
+  </script>
 </body>
 </html>
