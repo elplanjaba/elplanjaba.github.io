@@ -84,6 +84,19 @@
       background: var(--yellow);
     }
 
+    .account-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .account-button {
+      background: white; color: var(--dark); border: 1px solid var(--border);
+      border-radius: 9px; padding: 11px 12px; font-weight: bold; font-size: 12px;
+    }
+
+    .product-quantity { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; border: 1px solid var(--green); border-radius: 7px; padding: 4px; }
+    .product-quantity button { width: 34px; height: 32px; border: 0; border-radius: 5px;
+      background: var(--green); color: white; font-size: 18px; font-weight: bold; }
+    .product-quantity span { font-weight: bold; }
+
     .cart-button {
       background: var(--green);
       color: white;
@@ -406,6 +419,17 @@
 
     .cart-empty { text-align: center; padding: 40px 10px; }
 
+    .account-overlay { position: fixed; inset: 0; z-index: 20; background: #0007; display: none;
+      align-items: center; justify-content: center; padding: 18px; }
+    .account-overlay.open { display: flex; }
+    .account-dialog { background: white; width: min(430px, 100%); border-radius: 14px; padding: 24px;
+      box-shadow: 0 15px 50px #0002; }
+    .account-dialog h2 { margin-bottom: 10px; }
+    .account-dialog p { color: var(--muted); line-height: 1.6; margin-bottom: 18px; font-size: 14px; }
+    .account-dialog button { border: 0; border-radius: 8px; padding: 11px 15px; background: var(--green);
+      color: white; font-weight: bold; }
+    .account-dialog .account-close { float: right; background: transparent; color: var(--dark); font-size: 24px; padding: 0 4px; }
+
     @media (max-width: 850px) {
       .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero-art { font-size: 95px; }
@@ -416,6 +440,9 @@
       header { padding: 15px 4%; gap: 12px; }
       .brand { font-size: 21px; }
       .search { order: 3; flex-basis: 100%; max-width: none; }
+      .account-actions { order: 4; width: 100%; }
+      .account-button { flex: 1; }
+      .cart-button { flex: 1; }
       .hero { margin: 16px 4% 24px; padding: 30px 6%; }
       .hero-art { display: none; }
       .hero p { font-size: 14px; }
@@ -444,9 +471,13 @@
       <button aria-label="Buscar">🔎</button>
     </form>
 
-    <button class="cart-button" id="open-cart">
-      🛒 Mi jaba (<span id="cart-count">0</span>)
-    </button>
+    <div class="account-actions">
+      <button class="account-button" type="button" data-account="signin">Sign in</button>
+      <button class="account-button" type="button" data-account="signup">Sign up</button>
+      <button class="cart-button" id="open-cart" type="button">
+        🛒 Mi jaba (<span id="cart-count">0</span>)
+      </button>
+    </div>
   </header>
 
   <main>
@@ -532,6 +563,16 @@
     </aside>
   </div>
 
+  <div class="account-overlay" id="account-overlay" aria-hidden="true">
+    <section class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <button class="account-close" id="close-account" type="button" aria-label="Cerrar">×</button>
+      <h2 id="account-title">Tu cuenta de El Plan Jaba</h2>
+      <p id="account-message">En esta primera etapa puedes comprar como invitado y enviar tu pedido por WhatsApp. No necesitas registrarte.</p>
+      <p><strong>Las cuentas se habilitarán cuando conectemos un servicio seguro de autenticación.</strong> Por ahora no introduzcas contraseñas en esta página.</p>
+      <button id="continue-guest" type="button">Continuar como invitado</button>
+    </section>
+  </div>
+
   <script>
     // Productos demostrativos: aún no son el catálogo comercial real.
     // Los precios y la disponibilidad se definirán antes de vender.
@@ -552,7 +593,24 @@
 
     let selectedCategory = "Todos";
     let searchTerm = "";
+    const CART_STORAGE_KEY = "elPlanJaba.cart.v1";
     const cart = new Map();
+
+    // Recupera el carrito guardado; si los datos están dañados, comienza vacío.
+    try {
+      const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
+      if (Array.isArray(savedCart)) {
+        savedCart.forEach(([id, qty]) => {
+          const validId = Number(id);
+          const validQty = Number(qty);
+          if (products.some(product => product.id === validId) && Number.isInteger(validQty) && validQty > 0) {
+            cart.set(validId, validQty);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("No se pudo recuperar el carrito guardado.", error);
+    }
 
     const grid = document.getElementById("product-grid");
     const cartOverlay = document.getElementById("cart-overlay");
@@ -585,21 +643,43 @@
             <div class="product-category">${product.category}</div>
             <h3>${product.name}</h3>
             <div class="price">Precio por confirmar</div>
-            <button class="add-button" data-add="${product.id}">
-              + Añadir a mi jaba
-            </button>
+            ${cart.has(product.id) ? `
+              <div class="product-quantity" aria-label="Cantidad de ${product.name}">
+                <button type="button" data-product-change="${product.id}" data-delta="-1" aria-label="Restar ${product.name}">−</button>
+                <span>${cart.get(product.id)}</span>
+                <button type="button" data-product-change="${product.id}" data-delta="1" aria-label="Añadir ${product.name}">+</button>
+              </div>` : `
+              <button class="add-button" type="button" data-add="${product.id}">+ Añadir a mi jaba</button>`}
           </div>
         </article>
       `).join("");
     }
 
     // Añade un producto o incrementa su cantidad en el carrito.
+    function saveCart() {
+      // Guarda cantidades localmente en este navegador, sin datos personales.
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([...cart.entries()]));
+      } catch (error) {
+        console.warn("No se pudo guardar el carrito en este navegador.", error);
+      }
+    }
+
     function addToCart(id) {
       cart.set(id, (cart.get(id) || 0) + 1);
       renderCart();
     }
 
+    function changeQuantity(id, delta) {
+      const qty = (cart.get(id) || 0) + delta;
+      if (qty <= 0) cart.delete(id);
+      else cart.set(id, qty);
+      renderCart();
+    }
+
     function renderCart() {
+      saveCart();
+      renderProducts();
       const count = [...cart.values()].reduce((sum, qty) => sum + qty, 0);
       document.getElementById("cart-count").textContent = count;
 
@@ -637,14 +717,16 @@
 
       total.innerHTML = `
         <p><strong>Total:</strong> pendiente de confirmar precios y disponibilidad.</p>
-        <p>Este carrito es una demostración. Los pedidos y pagos reales todavía no están conectados.</p>
-        <button class="checkout" id="prepare-order">Revisar mi pedido</button>`;
+        <p>El pedido se enviará por WhatsApp para confirmar precios, disponibilidad y entrega. No se realiza ningún pago en esta página.</p>
+        <button class="checkout" id="prepare-order">Enviar pedido por WhatsApp</button>`;
     }
 
     // Delegación de eventos para las tarjetas de productos.
     grid.addEventListener("click", event => {
       const button = event.target.closest("[data-add]");
+      const change = event.target.closest("[data-product-change]");
       if (button) addToCart(Number(button.dataset.add));
+      if (change) changeQuantity(Number(change.dataset.productChange), Number(change.dataset.delta));
     });
 
     // Filtra por categoría.
@@ -682,17 +764,13 @@
 
       if (remove) {
         cart.delete(Number(remove.dataset.remove));
+        renderCart();
+        return;
       }
 
       if (change) {
-        const id = Number(change.dataset.change);
-        const qty = (cart.get(id) || 0) + Number(change.dataset.delta);
-
-        if (qty <= 0) cart.delete(id);
-        else cart.set(id, qty);
+        changeQuantity(Number(change.dataset.change), Number(change.dataset.delta));
       }
-
-      renderCart();
     });
 
     // Abre y cierra el panel del carrito.
@@ -714,8 +792,49 @@
 
     document.getElementById("cart-total").addEventListener("click", event => {
       if (event.target.id === "prepare-order") {
-        alert("Tu carrito está preparado. En la siguiente etapa configuraremos los precios y la forma de enviar pedidos.");
+        if (cart.size === 0) {
+          alert("Tu jaba está vacía. Añade algún producto antes de continuar.");
+          return;
+        }
+        const lines = [...cart.entries()].map(([id, qty]) => {
+          const product = products.find(item => item.id === id);
+          return `• ${product.name} — cantidad: ${qty}`;
+        });
+        const message = [
+          "¡Hola, El Plan Jaba! 🛒",
+          "Quiero consultar y confirmar este pedido:",
+          "",
+          ...lines,
+          "",
+          "Sé que los precios y la disponibilidad están pendientes de confirmación.",
+          "Por favor, confirmen el importe final y las opciones de entrega."
+        ].join("\n");
+        const whatsappUrl = `https://wa.me/5352086841?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
       }
+    });
+
+    const accountOverlay = document.getElementById("account-overlay");
+    document.querySelectorAll("[data-account]").forEach(button => {
+      button.addEventListener("click", () => {
+        const isSignup = button.dataset.account === "signup";
+        document.getElementById("account-title").textContent = isSignup ? "Crear cuenta" : "Iniciar sesión";
+        document.getElementById("account-message").textContent = isSignup
+          ? "El registro será opcional. Mientras activamos las cuentas seguras, puedes preparar tu compra como invitado."
+          : "La función de inicio de sesión aún no está activa. Puedes continuar como invitado y enviar tu pedido por WhatsApp.";
+        accountOverlay.classList.add("open");
+        accountOverlay.setAttribute("aria-hidden", "false");
+      });
+    });
+
+    function closeAccount() {
+      accountOverlay.classList.remove("open");
+      accountOverlay.setAttribute("aria-hidden", "true");
+    }
+    document.getElementById("close-account").addEventListener("click", closeAccount);
+    document.getElementById("continue-guest").addEventListener("click", closeAccount);
+    accountOverlay.addEventListener("click", event => {
+      if (event.target === accountOverlay) closeAccount();
     });
 
     renderProducts();
