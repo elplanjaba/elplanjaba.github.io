@@ -52,16 +52,37 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* Encabezado: conserva la tipografía original y muestra el logo. */
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      flex-shrink: 0;
-      max-width: 100%;
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: -1px;
-    }
+   
+/* Encabezado: muestra el logo y las letras juntos. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  max-width: 100%;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: #0b1628;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.brand-fallback {
+  display: inline;
+  color: #0b1628;
+  white-space: nowrap;
+}
+
+.brand-fallback span {
+  color: #43d9a3;
+}
 
     .brand img {
       display: block;
