@@ -52,12 +52,15 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* Logotipo de El Plan Jaba en el encabezado. */
+    /* Encabezado: conserva la tipografía original y muestra el logo. */
     .brand {
       display: inline-flex;
       align-items: center;
       flex-shrink: 0;
       max-width: 100%;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -1px;
     }
 
     .brand img {
@@ -68,6 +71,10 @@
       max-height: 72px;
       object-fit: contain;
     }
+
+    /* Texto de respaldo: aparece si la imagen no carga. */
+    .brand-fallback { display: none; }
+    .brand-fallback span { color: var(--red); }
 
     .search {
       flex: 1;
@@ -447,7 +454,7 @@
 
     @media (max-width: 560px) {
       header { padding: 15px 4%; gap: 12px; }
-      .brand img { max-width: 175px; max-height: 58px; }
+      .brand img { max-width: 175px; max-height: 58px; }\n      .brand { font-size: 21px; }
       .search { order: 3; flex-basis: 100%; max-width: none; }
       .account-actions { order: 4; width: 100%; }
       .account-button { flex: 1; }
@@ -471,7 +478,11 @@
   </div>
 
   <header>
-    <a href="#" class="brand" aria-label="El Plan Jaba - Inicio"><img src="logo_plan%20jaba.png" alt="El Plan Jaba"></a>
+    <a href="#" class="brand" aria-label="El Plan Jaba - Inicio">
+      <img src="logo_plan_jaba.png" alt="Logo de El Plan Jaba"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+      <span class="brand-fallback">EL PLAN <span>JABA</span> 🛍️</span>
+    </a>
 
     <form class="search" id="search-form">
       <input id="search-input" type="search"
