@@ -52,13 +52,22 @@
       border-bottom: 1px solid var(--border);
     }
 
+    /* Logotipo de El Plan Jaba en el encabezado. */
     .brand {
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: -1px;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      max-width: 100%;
     }
 
-    .brand span { color: var(--red); }
+    .brand img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 220px;
+      max-height: 72px;
+      object-fit: contain;
+    }
 
     .search {
       flex: 1;
@@ -438,7 +447,7 @@
 
     @media (max-width: 560px) {
       header { padding: 15px 4%; gap: 12px; }
-      .brand { font-size: 21px; }
+      .brand img { max-width: 175px; max-height: 58px; }
       .search { order: 3; flex-basis: 100%; max-width: none; }
       .account-actions { order: 4; width: 100%; }
       .account-button { flex: 1; }
@@ -462,7 +471,7 @@
   </div>
 
   <header>
-    <a href="#" class="brand">EL PLAN <span>JABA</span> 🛍️</a>
+    <a href="#" class="brand" aria-label="El Plan Jaba - Inicio"><img src="logo_plan%20jaba.png" alt="El Plan Jaba"></a>
 
     <form class="search" id="search-form">
       <input id="search-input" type="search"
