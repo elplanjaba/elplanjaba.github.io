@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>El Plan Jaba | Tienda online</title>
-  <meta name="description" content="Compra alimentos, higiene, limpieza y artículos para el hogar en El Plan Jaba.">
+  <meta name="description" content="Consulta nuestro catálogo de productos disponibles en El Plan Jaba.">
 
   <style>
     :root {
@@ -93,8 +92,8 @@
       object-fit: contain;
     }
 
-    /* Mantiene visibles el nombre y el logo al mismo tiempo. */
-    .brand-fallback { display: inline-flex; color: #0b1628; white-space: nowrap; }
+    /* Texto de respaldo: aparece si la imagen no carga. */
+    .brand-fallback { display: none; }
     .brand-fallback span { color: var(--red); }
 
     .search {
@@ -302,6 +301,15 @@
     }
 
     .product-info { padding: 15px; }
+
+    .product-photo-area { background: #f7f7f2; padding: 10px; }
+    .product-photo { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .photo-placeholder { width: 100%; height: 100%; place-items: center; text-align: center; color: #716f67; font-size: 13px; background: #f7f7f2; }
+    .product-description { color: var(--muted); font-size: 12px; line-height: 1.4; margin-top: 6px; min-height: 32px; }
+    .product-presentation { color: var(--muted); font-size: 11px; margin-top: 5px; }
+    .stock { font-size: 11px; color: var(--muted); margin: -5px 0 10px; }
+    .add-button:disabled { opacity: .55; cursor: not-allowed; }
+
 
     .product-category {
       color: var(--muted);
@@ -574,7 +582,7 @@
     <section class="jaba-banner">
       <div>
         <h2>La jaba no se llena sola. 😄</h2>
-        <p>Estamos preparando nuestro catálogo para que tu compra sea más fácil.</p>
+        <p>Productos reales del inventario. Añade lo que necesitas y prepara tu pedido.</p>
       </div>
       <div class="hero-art" aria-hidden="true">🧺</div>
     </section>
@@ -617,26 +625,15 @@
   </div>
 
   <script>
-    // Productos demostrativos: aún no son el catálogo comercial real.
-    // Los precios y la disponibilidad se definirán antes de vender.
+    // Catálogo real importado de Inventario_24-Oct-26(1).xlsx. No contiene productos de muestra.
     const products = [
-      { id: 1, name: "Arroz", category: "Alimentos", icon: "🍚", label: "Básico" },
-      { id: 2, name: "Frijoles", category: "Alimentos", icon: "🫘", label: "" },
-      { id: 3, name: "Aceite de cocina", category: "Alimentos", icon: "🫒", label: "" },
-      { id: 4, name: "Pasta", category: "Alimentos", icon: "🍝", label: "" },
-      { id: 5, name: "Detergente", category: "Limpieza", icon: "🧴", label: "Hogar" },
-      { id: 6, name: "Jabón de lavar", category: "Limpieza", icon: "🧼", label: "" },
-      { id: 7, name: "Pasta dental", category: "Higiene", icon: "🪥", label: "" },
-      { id: 8, name: "Champú", category: "Higiene", icon: "🧴", label: "" },
-      { id: 9, name: "Papel higiénico", category: "Higiene", icon: "🧻", label: "" },
-      { id: 10, name: "Utensilios de cocina", category: "Hogar", icon: "🍴", label: "" },
-      { id: 11, name: "Bolsas para basura", category: "Hogar", icon: "🗑️", label: "" },
-      { id: 12, name: "Esponja de limpieza", category: "Limpieza", icon: "🧽", label: "" }
+      { id: "ALI001", code: "ALI001", name: "Aceite Soya", category: "Alimentos", subcategory: "Aceites y Grasas", description: "Aceite de soya de 900ml.", presentation: "Pomo de 900ml.", price: 2850, stock: 5, photo: "Aceite_Soya_ALI001.jpg", status: "Act" },
+      { id: "ALI002", code: "ALI002", name: "Azucar Blanca", category: "Alimentos", subcategory: "Secos", description: "Azucar Blanca Cristalina.", presentation: "Pqte de 1 Kg.", price: 1250, stock: 12, photo: "Azucar_Blanca_ALI002.jpg", status: "Act" }
     ];
 
     let selectedCategory = "Todos";
     let searchTerm = "";
-    const CART_STORAGE_KEY = "elPlanJaba.cart.v1";
+    const CART_STORAGE_KEY = "elPlanJaba.cart.v2";
     const cart = new Map();
 
     // Recupera el carrito guardado; si los datos están dañados, comienza vacío.
@@ -644,7 +641,7 @@
       const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
       if (Array.isArray(savedCart)) {
         savedCart.forEach(([id, qty]) => {
-          const validId = Number(id);
+          const validId = String(id);
           const validQty = Number(qty);
           if (products.some(product => product.id === validId) && Number.isInteger(validQty) && validQty > 0) {
             cart.set(validId, validQty);
@@ -658,39 +655,38 @@
     const grid = document.getElementById("product-grid");
     const cartOverlay = document.getElementById("cart-overlay");
 
-    // Muestra solo productos que coinciden con la categoría y búsqueda.
+    // Muestra solo productos activos que coinciden con la categoría y búsqueda.
     function renderProducts() {
       const filtered = products.filter(product => {
-        const categoryMatch =
-          selectedCategory === "Todos" ||
-          product.category === selectedCategory;
-
-        const searchMatch =
-          product.name.toLowerCase().includes(searchTerm);
-
-        return categoryMatch && searchMatch;
+        const categoryMatch = selectedCategory === "Todos" || product.category === selectedCategory;
+        const searchMatch = `${product.name} ${product.code} ${product.description} ${product.subcategory}`.toLowerCase().includes(searchTerm);
+        return product.status === "Act" && categoryMatch && searchMatch;
       });
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty">No encontramos productos con esa búsqueda.</div>';
+        grid.innerHTML = '<div class="empty">No encontramos productos activos con esa búsqueda.</div>';
         return;
       }
 
       grid.innerHTML = filtered.map(product => `
         <article class="product-card">
-          <div class="product-art">
-            ${product.label ? `<span class="product-label">${product.label}</span>` : ""}
-            <span aria-hidden="true">${product.icon}</span>
+          <div class="product-art product-photo-area">
+            <img class="product-photo" src="${product.photo}" alt="${product.name}" loading="lazy"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+            <div class="photo-placeholder" style="display:none" aria-label="Foto pendiente">Foto pendiente</div>
           </div>
           <div class="product-info">
-            <div class="product-category">${product.category}</div>
+            <div class="product-category">${product.category} · ${product.subcategory}</div>
             <h3>${product.name}</h3>
-            <div class="price">Precio por confirmar</div>
-            ${cart.has(product.id) ? `
+            <p class="product-description">${product.description}</p>
+            <p class="product-presentation">${product.presentation}</p>
+            <div class="price">${Number(product.price).toLocaleString("es-ES")} CUP</div>
+            <p class="stock">Disponibles: ${product.stock}</p>
+            ${product.stock <= 0 ? '<button class="add-button" type="button" disabled>Agotado</button>' : cart.has(product.id) ? `
               <div class="product-quantity" aria-label="Cantidad de ${product.name}">
                 <button type="button" data-product-change="${product.id}" data-delta="-1" aria-label="Restar ${product.name}">−</button>
                 <span>${cart.get(product.id)}</span>
-                <button type="button" data-product-change="${product.id}" data-delta="1" aria-label="Añadir ${product.name}">+</button>
+                <button type="button" data-product-change="${product.id}" data-delta="1" aria-label="Añadir ${product.name}" ${cart.get(product.id) >= product.stock ? 'disabled' : ''}>+</button>
               </div>` : `
               <button class="add-button" type="button" data-add="${product.id}">+ Añadir a mi jaba</button>`}
           </div>
@@ -709,14 +705,21 @@
     }
 
     function addToCart(id) {
-      cart.set(id, (cart.get(id) || 0) + 1);
+      const product = products.find(item => item.id === id);
+      if (!product || product.status !== "Act" || product.stock <= 0) return;
+      const current = cart.get(id) || 0;
+      if (current >= product.stock) { alert("No hay más unidades disponibles de este producto."); return; }
+      cart.set(id, current + 1);
       renderCart();
     }
 
     function changeQuantity(id, delta) {
+      const product = products.find(item => item.id === id);
+      if (!product) return;
       const qty = (cart.get(id) || 0) + delta;
       if (qty <= 0) cart.delete(id);
-      else cart.set(id, qty);
+      else if (qty <= product.stock) cart.set(id, qty);
+      else { alert("La cantidad supera el stock disponible."); return; }
       renderCart();
     }
 
@@ -732,7 +735,7 @@
       if (cart.size === 0) {
         items.innerHTML = `
           <div class="cart-empty">
-            <div style="font-size:48px">🛒</div>
+            <div style="font-size:48px">🛍️</div>
             <h3>Tu jaba está vacía</h3>
             <p>¡Vamos a buscar lo que necesitas!</p>
           </div>`;
@@ -745,8 +748,8 @@
         return `
           <div class="cart-item">
             <div>
-              <strong>${product.icon} ${product.name}</strong>
-              <small>Precio pendiente de confirmar</small>
+              <strong>${product.name}</strong>
+              <small>${Number(product.price).toLocaleString("es-ES")} CUP · ${product.presentation}</small>
               <div class="quantity">
                 <button data-change="${id}" data-delta="-1" aria-label="Restar">−</button>
                 <span>${qty}</span>
@@ -758,9 +761,13 @@
           </div>`;
       }).join("");
 
+      const subtotal = [...cart.entries()].reduce((sum, [id, qty]) => {
+        const product = products.find(item => item.id === id);
+        return sum + (product ? product.price * qty : 0);
+      }, 0);
       total.innerHTML = `
-        <p><strong>Total:</strong> pendiente de confirmar precios y disponibilidad.</p>
-        <p>El pedido se enviará por WhatsApp para confirmar precios, disponibilidad y entrega. No se realiza ningún pago en esta página.</p>
+        <p><strong>Subtotal de productos:</strong> ${subtotal.toLocaleString("es-ES")} CUP</p>
+        <p>El pedido se enviará por WhatsApp para confirmar stock y entrega. No se realiza ningún pago en esta página.</p>
         <button class="checkout" id="prepare-order">Enviar pedido por WhatsApp</button>`;
     }
 
@@ -768,8 +775,8 @@
     grid.addEventListener("click", event => {
       const button = event.target.closest("[data-add]");
       const change = event.target.closest("[data-product-change]");
-      if (button) addToCart(Number(button.dataset.add));
-      if (change) changeQuantity(Number(change.dataset.productChange), Number(change.dataset.delta));
+      if (button) addToCart(button.dataset.add);
+      if (change) changeQuantity(change.dataset.productChange, Number(change.dataset.delta));
     });
 
     // Filtra por categoría.
@@ -806,13 +813,13 @@
       const remove = event.target.closest("[data-remove]");
 
       if (remove) {
-        cart.delete(Number(remove.dataset.remove));
+        cart.delete(remove.dataset.remove);
         renderCart();
         return;
       }
 
       if (change) {
-        changeQuantity(Number(change.dataset.change), Number(change.dataset.delta));
+        changeQuantity(change.dataset.change, Number(change.dataset.delta));
       }
     });
 
@@ -841,7 +848,7 @@
         }
         const lines = [...cart.entries()].map(([id, qty]) => {
           const product = products.find(item => item.id === id);
-          return `• ${product.name} — cantidad: ${qty}`;
+          return `• ${product.name} (${product.code}) — ${qty} × ${product.price} CUP = ${product.price * qty} CUP`;
         });
         const message = [
           "¡Hola, El Plan Jaba! 🛒",
@@ -849,8 +856,8 @@
           "",
           ...lines,
           "",
-          "Sé que los precios y la disponibilidad están pendientes de confirmación.",
-          "Por favor, confirmen el importe final y las opciones de entrega."
+          "Subtotal de productos: " + [...cart.entries()].reduce((sum, [id, qty]) => { const product = products.find(item => item.id === id); return sum + (product ? product.price * qty : 0); }, 0).toLocaleString("es-ES") + " CUP",
+          "Por favor, confirmen el stock y las opciones de entrega. No he realizado ningún pago."
         ].join("\n");
         const whatsappUrl = `https://wa.me/5352086841?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, "_blank", "noopener,noreferrer");
