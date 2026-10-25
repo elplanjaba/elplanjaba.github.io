@@ -623,12 +623,12 @@
       const eliminar = evento.target.closest(".eliminar");
 
       if (editar) {
-        const p = productos.find(x => x.id === editar.dataset.id);
+        const p = productos.find(x => String(x.id) === editar.dataset.id);;
         if (p) abrirFormulario(p);
       }
 
       if (eliminar) {
-        const p = productos.find(x => x.id === eliminar.dataset.id);
+        const p = productos.find(x => String(x.id) === eliminar.dataset.id);;
         if (!p) return;
 
         if (!confirm(`¿Eliminar el producto "${p.nombre}"?`)) return;
