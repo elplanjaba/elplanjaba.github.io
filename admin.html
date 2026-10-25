@@ -955,30 +955,21 @@ activo: p.activo,
           });
         }
 
-        // Insertar/actualizar antes de eliminar productos ausentes.
-        const { error: errorGuardar } = await cliente
-          .from("productos")
-          .upsert(salida, { onConflict: "codigo" });
+               // Importar el catálogo mediante la función segura de Supabase.
+        const { data: resultado, error: errorGuardar } = await cliente
+          .rpc("importar_catalogo", {
+            p_productos: salida,
+            p_reemplazar: false
+          });
 
         if (errorGuardar) throw errorGuardar;
 
-        const codigosNuevos = new Set(salida.map(p => normalizar(p.codigo)));
-
-        const idsEliminar = (actuales || [])
-          .filter(p => !codigosNuevos.has(normalizar(p.codigo)))
-          .map(p => p.id);
-
-        if (idsEliminar.length) {
-          const { error: errorEliminar } = await cliente
-            .from("productos")
-            .delete()
-            .in("id", idsEliminar);
-
-          if (errorEliminar) {
-            throw new Error(
-              "Los productos se actualizaron, pero no se pudieron " +
-              "eliminar todos los que faltaban: " + errorEliminar.message
-            );
+        mostrarMensaje(
+          "Importación completada. Productos procesados: " +
+          resultado.procesados +
+          ". Productos eliminados: " +
+          resultado.eliminados + "."
+        );
           }
         }
 
