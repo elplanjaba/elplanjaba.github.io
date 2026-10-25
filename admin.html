@@ -5,173 +5,993 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Administración | El Plan Jaba</title>
-  <meta name="robots" content="noindex, nofollow">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+  <script src="supabase-config.js"></script>
 
   <style>
     :root {
-      --azul: #17324d;
-      --rojo: #c83b3b;
-      --crema: #fff8e8;
-      --verde: #287a4b;
+      --fondo: #f5f1e8;
+      --papel: #fffdf7;
+      --tinta: #283b32;
+      --verde: #426b45;
+      --rojo: #a63c35;
+      --borde: #ded7c8;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      background: var(--crema);
+      background: var(--fondo);
+      color: var(--tinta);
       font-family: Arial, sans-serif;
-      color: var(--azul);
+    }
+
+    header {
+      background: var(--tinta);
+      color: white;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    header h1 { margin: 0; font-size: 22px; }
+
+    main {
+      width: min(1100px, 94%);
+      margin: 24px auto;
     }
 
     .panel {
-      width: 100%;
-      max-width: 420px;
-      padding: 28px;
-      background: white;
-      border: 2px solid var(--azul);
-      border-radius: 16px;
-      box-shadow: 0 8px 25px #17324d20;
+      background: var(--papel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
     }
 
-    h1 { margin: 0 0 8px; text-align: center; }
-    .subtitulo { text-align: center; margin-bottom: 26px; }
+    h2 { margin-top: 0; font-size: 20px; }
+
+    input, select, textarea, button {
+      font: inherit;
+      border-radius: 7px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #c8c0b1;
+      background: white;
+      margin-top: 5px;
+    }
 
     label {
       display: block;
-      margin: 16px 0 6px;
+      font-size: 14px;
       font-weight: bold;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #aab5bf;
-      border-radius: 8px;
-      font-size: 16px;
+      margin-bottom: 12px;
     }
 
     button {
-      width: 100%;
-      padding: 13px;
-      margin-top: 22px;
       border: 0;
-      border-radius: 8px;
-      background: var(--azul);
+      padding: 10px 14px;
+      background: var(--verde);
       color: white;
-      font-size: 16px;
-      font-weight: bold;
       cursor: pointer;
+      font-weight: bold;
     }
 
-    button:disabled { opacity: .6; cursor: wait; }
+    button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
 
-    #mensaje {
-      margin-top: 18px;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
+    button.secundario { background: #5d675f; }
+    button.peligro { background: var(--rojo); }
+    button.pequeno { padding: 7px 9px; font-size: 13px; }
+
+    .rejilla {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
     }
 
     .nota {
-      margin-top: 20px;
-      font-size: 13px;
+      color: #5e625a;
+      font-size: 14px;
       line-height: 1.5;
-      color: #526170;
+    }
+
+    #mensaje {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+
+    .oculto { display: none !important; }
+
+    .tabla-contenedor { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    th, td {
+      padding: 11px 9px;
+      text-align: left;
+      border-bottom: 1px solid var(--borde);
+      vertical-align: middle;
+    }
+
+    th { background: #eee8dc; }
+
+    .foto {
+      width: 55px;
+      height: 55px;
+      object-fit: contain;
+      background: white;
+      border-radius: 6px;
+    }
+
+    .numero {
+      font-size: 25px;
+      font-weight: bold;
+      margin: 6px 0;
+    }
+
+    @media (max-width: 650px) {
+      .rejilla { grid-template-columns: 1fr; }
+      .panel { padding: 14px; }
+      header h1 { font-size: 19px; }
     }
   </style>
 </head>
 
 <body>
-  <main class="panel">
-    <h1>El Plan Jaba</h1>
-    <p class="subtitulo">Panel privado de administración</p>
+  <header>
+    <h1>🛍️ El Plan Jaba | Administración</h1>
+    <button id="cerrarSesion" class="secundario oculto">
+      Cerrar sesión
+    </button>
+  </header>
 
-    <form id="formulario">
-      <label for="correo">Correo electrónico</label>
-      <input id="correo" type="email" autocomplete="username"
-             required>
+  <main>
+    <div id="mensaje" role="status" aria-live="polite"></div>
 
-      <label for="clave">Contraseña</label>
-      <input id="clave" type="password"
-             autocomplete="current-password" required>
+    <section id="acceso" class="panel">
+      <h2>Acceso de administrador</h2>
 
-      <button id="entrar" type="submit">Iniciar sesión</button>
-    </form>
+      <form id="formAcceso">
+        <label>
+          Correo electrónico
+          <input id="correo" type="email" autocomplete="username" required>
+        </label>
 
-    <p id="mensaje" role="status" aria-live="polite"></p>
+        <label>
+          Contraseña
+          <input id="clave" type="password"
+                 autocomplete="current-password" required>
+        </label>
 
-    <p class="nota">
-      Acceso exclusivo para personal autorizado.
-      No compartas tus credenciales.
-    </p>
+        <button id="entrar" type="submit">Iniciar sesión</button>
+      </form>
+    </section>
+
+    <div id="panelGestion" class="oculto">
+      <section class="panel">
+        <h2>Resumen del catálogo</h2>
+        <div class="rejilla">
+          <div>
+            <div class="nota">Productos registrados</div>
+            <div id="totalProductos" class="numero">—</div>
+          </div>
+          <div>
+            <div class="nota">Unidades en inventario</div>
+            <div id="totalExistencias" class="numero">—</div>
+          </div>
+        </div>
+        <div class="acciones">
+          <button id="recargar" class="secundario">Actualizar lista</button>
+          <button id="nuevoProducto">Añadir producto</button>
+        </div>
+      </section>
+
+      <section id="formularioPanel" class="panel oculto">
+        <h2 id="tituloFormulario">Añadir producto</h2>
+
+        <form id="formProducto">
+          <input id="productoId" type="hidden">
+
+          <div class="rejilla">
+            <label>
+              Código único
+              <input id="codigo" required maxlength="80">
+            </label>
+
+            <label>
+              Nombre del producto
+              <input id="nombre" required maxlength="200">
+            </label>
+
+            <label>
+              Categoría
+              <select id="categoria" required></select>
+            </label>
+
+            <label>
+              Precio
+              <input id="precio" type="number" min="0" step="0.01" required>
+            </label>
+
+            <label>
+              Existencias
+              <input id="existencia" type="number" min="0"
+                     step="1" required>
+            </label>
+
+            <label>
+              Fotografía
+              <input id="fotoProducto" type="file"
+                     accept="image/jpeg,image/png,image/webp">
+            </label>
+          </div>
+
+          <label>
+            Descripción
+            <textarea id="descripcion" rows="3"></textarea>
+          </label>
+
+          <p class="nota">
+            La foto se guardará en el almacenamiento privado de Supabase.
+            Si no eliges otra foto, se conservará la actual al editar.
+          </p>
+
+          <div class="acciones">
+            <button id="guardarProducto" type="submit">Guardar producto</button>
+            <button id="cancelarFormulario" type="button"
+                    class="secundario">Cancelar</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Productos registrados</h2>
+
+        <label>
+          Buscar por código o nombre
+          <input id="buscar" type="search"
+                 placeholder="Escribe para filtrar...">
+        </label>
+
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Existencias</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="listaProductos">
+              <tr><td colspan="7">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Importar catálogo desde Excel</h2>
+
+        <p class="nota">
+          Selecciona un archivo Excel (.xlsx o .xls) y, opcionalmente,
+          un ZIP con fotografías. La primera fila debe contener los
+          encabezados. Se aceptan estos nombres:
+          <strong>codigo, nombre, descripcion, categoria, precio,
+          existencia</strong>. También se aceptan algunos encabezados
+          equivalentes en español, como código, producto y stock.
+          Las categorías deben existir o se crearán durante la importación.
+        </p>
+
+        <label>
+          Archivo Excel
+          <input id="archivoExcel" type="file"
+                 accept=".xlsx,.xls">
+        </label>
+
+        <label>
+          ZIP con fotos (opcional)
+          <input id="archivoZip" type="file" accept=".zip">
+        </label>
+
+        <p class="nota">
+          Nombra cada foto con el código del producto, por ejemplo
+          <strong>ARROZ001.jpg</strong>. Se buscará una coincidencia
+          por código, sin distinguir mayúsculas y minúsculas.
+          Si el ZIP no incluye la foto de un producto, se conservará
+          su foto actual cuando ya exista.
+        </p>
+
+        <div class="acciones">
+          <button id="previsualizar" type="button">Validar Excel</button>
+          <button id="importar" type="button" disabled>
+            Confirmar importación
+          </button>
+        </div>
+
+        <div id="resumenImportacion" class="nota"></div>
+      </section>
+    </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-
   <script>
-    const formulario = document.getElementById("formulario");
-    const boton = document.getElementById("entrar");
-    const mensaje = document.getElementById("mensaje");
+    "use strict";
 
-    formulario.addEventListener("submit", async function(evento) {
+    const BUCKET = "Productos";
+    const $ = id => document.getElementById(id);
+
+    let cliente;
+    let usuarioActual = null;
+    let productos = [];
+    let categorias = [];
+    let importacionPreparada = null;
+
+    function mostrarMensaje(texto, error = false) {
+      $("mensaje").textContent = texto;
+      $("mensaje").style.color = error ? "#a63c35" : "#283b32";
+    }
+
+    function escapar(texto) {
+      return String(texto ?? "").replace(/[&<>"']/g, caracter => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[caracter]);
+    }
+
+    function normalizar(texto) {
+      return String(texto ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\s_-]+/g, "");
+    }
+
+    function numero(valor) {
+      if (typeof valor === "number") return valor;
+      const texto = String(valor ?? "").trim().replace(",", ".");
+      return texto === "" ? NaN : Number(texto);
+    }
+
+    async function comprobarAdministrador() {
+      const { data: sesionData, error: sesionError } =
+        await cliente.auth.getSession();
+
+      if (sesionError) throw sesionError;
+
+      const usuario = sesionData.session?.user;
+
+      if (!usuario) {
+        usuarioActual = null;
+        mostrarAcceso();
+        return false;
+      }
+
+      const { data, error } = await cliente
+        .from("administradores")
+        .select("user_id")
+        .eq("user_id", usuario.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        await cliente.auth.signOut();
+        usuarioActual = null;
+        mostrarAcceso();
+        mostrarMensaje("Esta cuenta no está autorizada como administradora.", true);
+        return false;
+      }
+
+      usuarioActual = usuario;
+      $("acceso").classList.add("oculto");
+      $("panelGestion").classList.remove("oculto");
+      $("cerrarSesion").classList.remove("oculto");
+      return true;
+    }
+
+    function mostrarAcceso() {
+      $("acceso").classList.remove("oculto");
+      $("panelGestion").classList.add("oculto");
+      $("cerrarSesion").classList.add("oculto");
+    }
+
+    async function cargarCategorias() {
+      const { data, error } = await cliente
+        .from("categorias")
+        .select("id,nombre,activa")
+        .eq("activa", true)
+        .order("nombre");
+
+      if (error) throw error;
+
+      categorias = data || [];
+      $("categoria").innerHTML = categorias.map(c =>
+        `<option value="${c.id}">${escapar(c.nombre)}</option>`
+      ).join("");
+    }
+
+    async function cargarProductos() {
+      mostrarMensaje("Cargando catálogo...");
+
+      const { data, error } = await cliente
+        .from("productos")
+        .select("id,codigo,nombre,descripcion,categoria_id,precio,existencia,imagen_url,activo")
+        .order("nombre");
+
+      if (error) throw error;
+
+      productos = data || [];
+      dibujarProductos();
+      mostrarMensaje("Catálogo actualizado.");
+    }
+
+    function dibujarProductos() {
+      const busqueda = normalizar($("buscar").value);
+
+      const filtrados = productos.filter(p =>
+        normalizar(p.codigo).includes(busqueda) ||
+        normalizar(p.nombre).includes(busqueda)
+      );
+
+      $("totalProductos").textContent = productos.length;
+      $("totalExistencias").textContent = productos.reduce(
+        (total, p) => total + Number(p.existencia || 0), 0
+      );
+
+      if (!filtrados.length) {
+        $("listaProductos").innerHTML =
+          '<tr><td colspan="7">No hay productos que mostrar.</td></tr>';
+        return;
+      }
+
+      $("listaProductos").innerHTML = filtrados.map(p => {
+        const cat = categorias.find(c => c.id === p.categoria_id);
+        return `
+          <tr>
+            <td><img class="foto" data-foto-id="${p.id}" alt=""></td>
+            <td>${escapar(p.codigo)}</td>
+            <td>${escapar(p.nombre)}</td>
+            <td>${escapar(cat?.nombre || "Sin categoría")}</td>
+            <td>${Number(p.precio).toFixed(2)}</td>
+            <td>${Number(p.existencia)}</td>
+            <td>
+              <div class="acciones">
+                <button class="pequeno editar" data-id="${p.id}">Editar</button>
+                <button class="pequeno peligro eliminar" data-id="${p.id}">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      }).join("");
+
+      cargarFotosVisibles();
+    }
+
+    async function cargarFotosVisibles() {
+      for (const p of productos) {
+        if (!p.imagen_url) continue;
+
+        const imagen = document.querySelector(`[data-foto-id="${p.id}"]`);
+        if (!imagen) continue;
+
+        const { data, error } = await cliente.storage
+          .from(BUCKET)
+          .createSignedUrl(p.imagen_url, 1800);
+
+        if (!error && data?.signedUrl) {
+          imagen.src = data.signedUrl;
+        }
+      }
+    }
+
+    function abrirFormulario(p = null) {
+      $("formularioPanel").classList.remove("oculto");
+      $("formProducto").reset();
+      $("productoId").value = p?.id || "";
+      $("tituloFormulario").textContent =
+        p ? "Editar producto" : "Añadir producto";
+
+      if (p) {
+        $("codigo").value = p.codigo;
+        $("codigo").readOnly = true;
+        $("nombre").value = p.nombre;
+        $("descripcion").value = p.descripcion || "";
+        $("categoria").value = p.categoria_id;
+        $("precio").value = p.precio;
+        $("existencia").value = p.existencia;
+      } else {
+        $("codigo").readOnly = false;
+      }
+
+      $("formularioPanel").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function subirFoto(archivo, codigo) {
+      if (!archivo) return null;
+
+      const permitidos = ["image/jpeg", "image/png", "image/webp"];
+
+      if (!permitidos.includes(archivo.type)) {
+        throw new Error("La foto debe ser JPG, PNG o WEBP.");
+      }
+
+      if (archivo.size > 5 * 1024 * 1024) {
+        throw new Error("Cada foto debe pesar como máximo 5 MB.");
+      }
+
+      const extension = archivo.type === "image/jpeg" ? "jpg" :
+        archivo.type === "image/png" ? "png" : "webp";
+
+      const ruta = `${codigo}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+      const { error } = await cliente.storage
+        .from(BUCKET)
+        .upload(ruta, archivo, {
+          contentType: archivo.type,
+          upsert: false
+        });
+
+      if (error) throw error;
+      return ruta;
+    }
+
+    $("formAcceso").addEventListener("submit", async evento => {
       evento.preventDefault();
-
-      mensaje.textContent = "";
-      boton.disabled = true;
+      $("entrar").disabled = true;
 
       try {
-        if (
-          typeof SUPABASE_URL === "undefined" ||
-          typeof SUPABASE_PUBLISHABLE_KEY === "undefined" ||
-          !SUPABASE_URL.startsWith("https://") ||
-          !SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")
-        ) {
-          throw new Error("Revisa la configuración de Supabase.");
-        }
-
-        const cliente = window.supabase.createClient(
-          SUPABASE_URL,
-          SUPABASE_PUBLISHABLE_KEY
-        );
-
-        const { data, error } = await cliente.auth.signInWithPassword({
-          email: document.getElementById("correo").value.trim(),
-          password: document.getElementById("clave").value
+        const { error } = await cliente.auth.signInWithPassword({
+          email: $("correo").value.trim(),
+          password: $("clave").value
         });
 
         if (error) throw error;
 
-        const { data: autorizacion, error: errorAutorizacion } =
-          await cliente
-            .from("administradores")
-            .select("user_id")
-            .eq("user_id", data.user.id)
-            .maybeSingle();
-
-        if (errorAutorizacion) throw errorAutorizacion;
-
-        if (!autorizacion) {
-          await cliente.auth.signOut();
-          throw new Error("Esta cuenta no está autorizada como administradora.");
+        if (await comprobarAdministrador()) {
+          await cargarCategorias();
+          await cargarProductos();
         }
-
-        mensaje.style.color = "var(--verde)";
-        mensaje.textContent =
-          "Acceso autorizado. El inicio de sesión funciona; el panel de gestión se configurará en el siguiente paso.";
-
       } catch (error) {
-        mensaje.style.color = "var(--rojo)";
-        mensaje.textContent =
-          error.message || "No se pudo iniciar sesión.";
+        mostrarMensaje(error.message || "No se pudo iniciar sesión.", true);
       } finally {
-        boton.disabled = false;
+        $("entrar").disabled = false;
       }
     });
+
+    $("cerrarSesion").addEventListener("click", async () => {
+      const { error } = await cliente.auth.signOut();
+      if (error) {
+        mostrarMensaje(error.message, true);
+        return;
+      }
+      mostrarAcceso();
+      mostrarMensaje("Sesión cerrada.");
+    });
+
+    $("nuevoProducto").addEventListener("click", () => abrirFormulario());
+    $("cancelarFormulario").addEventListener("click", () => {
+      $("formularioPanel").classList.add("oculto");
+    });
+
+    $("recargar").addEventListener("click", async () => {
+      try {
+        await cargarCategorias();
+        await cargarProductos();
+      } catch (error) {
+        mostrarMensaje(error.message, true);
+      }
+    });
+
+    $("buscar").addEventListener("input", dibujarProductos);
+
+    $("listaProductos").addEventListener("click", async evento => {
+      const editar = evento.target.closest(".editar");
+      const eliminar = evento.target.closest(".eliminar");
+
+      if (editar) {
+        const p = productos.find(x => x.id === editar.dataset.id);
+        if (p) abrirFormulario(p);
+      }
+
+      if (eliminar) {
+        const p = productos.find(x => x.id === eliminar.dataset.id);
+        if (!p) return;
+
+        if (!confirm(`¿Eliminar el producto "${p.nombre}"?`)) return;
+
+        try {
+          mostrarMensaje("Eliminando producto...");
+          const { error } = await cliente
+            .from("productos")
+            .delete()
+            .eq("id", p.id);
+
+          if (error) throw error;
+
+          await cargarProductos();
+          mostrarMensaje("Producto eliminado.");
+        } catch (error) {
+          mostrarMensaje(error.message, true);
+        }
+      }
+    });
+
+    $("formProducto").addEventListener("submit", async evento => {
+      evento.preventDefault();
+      $("guardarProducto").disabled = true;
+
+      try {
+        const id = $("productoId").value;
+        const anterior = productos.find(p => p.id === id);
+        const codigo = $("codigo").value.trim();
+
+        const registro = {
+          codigo,
+          nombre: $("nombre").value.trim(),
+          descripcion: $("descripcion").value.trim(),
+          categoria_id: $("categoria").value,
+          precio: numero($("precio").value),
+          existencia: numero($("existencia").value),
+          activo: true,
+          actualizado_en: new Date().toISOString()
+        };
+
+        if (!registro.nombre || !registro.categoria_id ||
+            !Number.isFinite(registro.precio) || registro.precio < 0 ||
+            !Number.isInteger(registro.existencia) || registro.existencia < 0) {
+          throw new Error("Revisa nombre, categoría, precio y existencias.");
+        }
+
+        const archivo = $("fotoProducto").files[0];
+        const fotoNueva = await subirFoto(archivo, codigo);
+
+        registro.imagen_url = fotoNueva || anterior?.imagen_url || null;
+
+        let resultado;
+
+        if (id) {
+          resultado = await cliente
+            .from("productos")
+            .update(registro)
+            .eq("id", id);
+        } else {
+          resultado = await cliente.from("productos").insert(registro);
+        }
+
+        if (resultado.error) throw resultado.error;
+
+        $("formularioPanel").classList.add("oculto");
+        await cargarProductos();
+        mostrarMensaje("Producto guardado correctamente.");
+      } catch (error) {
+        mostrarMensaje(error.message || "No se pudo guardar el producto.", true);
+      } finally {
+        $("guardarProducto").disabled = false;
+      }
+    });
+
+    function obtenerCampo(fila, nombres) {
+      for (const clave of Object.keys(fila)) {
+        if (nombres.includes(normalizar(clave))) return fila[clave];
+      }
+      return undefined;
+    }
+
+    async function prepararImportacion() {
+      const archivo = $("archivoExcel").files[0];
+
+      if (!archivo) throw new Error("Selecciona primero el archivo Excel.");
+
+      const bytes = await archivo.arrayBuffer();
+      const libro = XLSX.read(bytes, { type: "array" });
+      const hoja = libro.Sheets[libro.SheetNames[0]];
+
+      if (!hoja) throw new Error("El archivo Excel no contiene una hoja.");
+
+      const filas = XLSX.utils.sheet_to_json(hoja, {
+        defval: "",
+        raw: true
+      });
+
+      if (!filas.length) throw new Error("La hoja no contiene productos.");
+
+      const codigos = new Set();
+      const registros = [];
+
+      for (let i = 0; i < filas.length; i++) {
+        const fila = filas[i];
+
+        const codigo = String(obtenerCampo(fila,
+          ["codigo", "codigoproducto", "sku"]) ?? "").trim();
+
+        const nombre = String(obtenerCampo(fila,
+          ["nombre", "producto", "nombreproducto"]) ?? "").trim();
+
+        const categoria = String(obtenerCampo(fila,
+          ["categoria", "tipoproducto"]) ?? "").trim();
+
+        const precio = numero(obtenerCampo(fila,
+          ["precio", "precioventa", "precioactual"]));
+
+        const existencia = numero(obtenerCampo(fila,
+          ["existencia", "existencias", "stock", "cantidad"]));
+
+        const descripcion = String(obtenerCampo(fila,
+          ["descripcion", "detalle"]) ?? "").trim();
+
+        if (!codigo || !nombre || !categoria ||
+            !Number.isFinite(precio) || precio < 0 ||
+            !Number.isInteger(existencia) || existencia < 0) {
+          throw new Error(
+            `Fila ${i + 2}: falta código, nombre o categoría, ` +
+            `o el precio/existencia no es válido.`
+          );
+        }
+
+        const clave = normalizar(codigo);
+
+        if (codigos.has(clave)) {
+          throw new Error(`Código duplicado en Excel: ${codigo}`);
+        }
+
+        codigos.add(clave);
+        registros.push({
+          codigo,
+          nombre,
+          descripcion,
+          categoria,
+          precio,
+          existencia
+        });
+      }
+
+      const zipArchivo = $("archivoZip").files[0];
+      let fotos = new Map();
+
+      if (zipArchivo) {
+        const zip = await JSZip.loadAsync(zipArchivo);
+
+        for (const [ruta, entrada] of Object.entries(zip.files)) {
+          if (entrada.dir) continue;
+
+          const nombreArchivo = ruta.split("/").pop();
+          const extension = nombreArchivo.split(".").pop().toLowerCase();
+
+          if (!["jpg", "jpeg", "png", "webp"].includes(extension)) continue;
+
+          const codigoFoto = normalizar(
+            nombreArchivo.replace(/\.[^.]+$/, "")
+          );
+
+          if (!fotos.has(codigoFoto)) {
+            const blob = await entrada.async("blob");
+            const mime = extension === "png" ? "image/png" :
+              extension === "webp" ? "image/webp" : "image/jpeg";
+
+            fotos.set(codigoFoto, new File([blob], nombreArchivo, { type: mime }));
+          }
+        }
+      }
+
+      return { registros, fotos };
+    }
+
+    $("previsualizar").addEventListener("click", async () => {
+      $("previsualizar").disabled = true;
+      $("importar").disabled = true;
+      importacionPreparada = null;
+      $("resumenImportacion").textContent = "";
+
+      try {
+        importacionPreparada = await prepararImportacion();
+
+        const { registros, fotos } = importacionPreparada;
+
+        $("resumenImportacion").textContent =
+          `Validación correcta.\n` +
+          `Productos en Excel: ${registros.length}\n` +
+          `Fotos encontradas en ZIP: ${fotos.size}\n\n` +
+          `Al confirmar, los productos que no estén en el Excel ` +
+          `se eliminarán del catálogo. Los pedidos existentes se conservarán.`;
+
+        $("importar").disabled = false;
+        mostrarMensaje("Excel validado. Revisa el resumen antes de confirmar.");
+      } catch (error) {
+        mostrarMensaje(error.message || "No se pudo validar el Excel.", true);
+      } finally {
+        $("previsualizar").disabled = false;
+      }
+    });
+
+    $("importar").addEventListener("click", async () => {
+      if (!importacionPreparada) return;
+
+      const { registros, fotos } = importacionPreparada;
+
+      if (!confirm(
+        `Vas a importar ${registros.length} productos.\n` +
+        `Los productos ausentes del Excel se eliminarán del catálogo.\n` +
+        `Los pedidos se conservarán.\n\n¿Continuar?`
+      )) return;
+
+      $("importar").disabled = true;
+
+      try {
+        mostrarMensaje("Importando catálogo. No cierres esta página...");
+
+        // Leer el catálogo actual para conservar las fotos existentes.
+        const { data: actuales, error: errorActuales } = await cliente
+          .from("productos")
+          .select("id,codigo,imagen_url");
+
+        if (errorActuales) throw errorActuales;
+
+        const actualesPorCodigo = new Map(
+          (actuales || []).map(p => [normalizar(p.codigo), p])
+        );
+
+        // Crear las categorías que aún no existan.
+        const nombresCategoria = [
+          ...new Set(registros.map(p => p.categoria.trim()))
+        ];
+
+        for (const nombre of nombresCategoria) {
+          const existe = categorias.some(
+            c => normalizar(c.nombre) === normalizar(nombre)
+          );
+
+          if (!existe) {
+            const { error } = await cliente
+              .from("categorias")
+              .insert({ nombre, activa: true });
+
+            if (error && !String(error.message).toLowerCase().includes("duplicate")) {
+              throw error;
+            }
+          }
+        }
+
+        await cargarCategorias();
+
+        const salida = [];
+
+        for (const p of registros) {
+          const categoria = categorias.find(
+            c => normalizar(c.nombre) === normalizar(p.categoria)
+          );
+
+          if (!categoria) {
+            throw new Error(`No se pudo resolver la categoría: ${p.categoria}`);
+          }
+
+          const anterior = actualesPorCodigo.get(normalizar(p.codigo));
+          let imagen = anterior?.imagen_url || null;
+          const archivoFoto = fotos.get(normalizar(p.codigo));
+
+          if (archivoFoto) {
+            imagen = await subirFoto(archivoFoto, p.codigo);
+          }
+
+          salida.push({
+            codigo: p.codigo,
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            categoria_id: categoria.id,
+            precio: p.precio,
+            existencia: p.existencia,
+            imagen_url: imagen,
+            activo: true,
+            actualizado_en: new Date().toISOString()
+          });
+        }
+
+        // Insertar/actualizar antes de eliminar productos ausentes.
+        const { error: errorGuardar } = await cliente
+          .from("productos")
+          .upsert(salida, { onConflict: "codigo" });
+
+        if (errorGuardar) throw errorGuardar;
+
+        const codigosNuevos = new Set(salida.map(p => normalizar(p.codigo)));
+
+        const idsEliminar = (actuales || [])
+          .filter(p => !codigosNuevos.has(normalizar(p.codigo)))
+          .map(p => p.id);
+
+        if (idsEliminar.length) {
+          const { error: errorEliminar } = await cliente
+            .from("productos")
+            .delete()
+            .in("id", idsEliminar);
+
+          if (errorEliminar) {
+            throw new Error(
+              "Los productos se actualizaron, pero no se pudieron " +
+              "eliminar todos los que faltaban: " + errorEliminar.message
+            );
+          }
+        }
+
+        await cargarProductos();
+
+        importacionPreparada = null;
+        $("archivoExcel").value = "";
+        $("archivoZip").value = "";
+        $("resumenImportacion").textContent = "";
+        mostrarMensaje("Importación terminada correctamente.");
+      } catch (error) {
+        mostrarMensaje(
+          "La importación no pudo completarse por completo: " +
+          (error.message || "error desconocido") +
+          "\nRevisa el catálogo antes de volver a intentarlo.",
+          true
+        );
+      } finally {
+        $("importar").disabled = true;
+      }
+    });
+
+    async function iniciar() {
+      try {
+        if (typeof SUPABASE_URL === "undefined" ||
+            typeof SUPABASE_PUBLISHABLE_KEY === "undefined" ||
+            !SUPABASE_URL.startsWith("https://") ||
+            !SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")) {
+          throw new Error(
+            "Revisa supabase-config.js: faltan la URL base del proyecto " +
+            "o la clave publishable."
+          );
+        }
+
+        cliente = window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_PUBLISHABLE_KEY
+        );
+
+        if (await comprobarAdministrador()) {
+          await cargarCategorias();
+          await cargarProductos();
+        }
+      } catch (error) {
+        mostrarMensaje(error.message || "No se pudo iniciar el panel.", true);
+      }
+    }
+
+    iniciar();
   </script>
 </body>
 </html>
