@@ -668,8 +668,9 @@
           `Validación correcta.\n` +
           `Productos en Excel: ${registros.length}\n` +
           `Fotos encontradas en ZIP: ${fotos.size}\n\n` +
-          `Al confirmar, los productos que no estén en el Excel ` +
-          `se eliminarán del catálogo. Los pedidos existentes se conservarán.`;
+          `Los productos ausentes del Excel se conservarán: ` +
+          `con existencia mayor que cero seguirán visibles; ` +
+          `con existencia cero quedarán ocultos al público.`;
         $("importar").disabled = false;
         mostrarMensaje("Excel validado. Revisa el resumen antes de confirmar.");
       } catch (error) {
@@ -683,8 +684,8 @@
       const { registros, fotos } = importacionPreparada;
       if (!confirm(
         `Vas a importar ${registros.length} productos.\n` +
-        `Los productos ausentes del Excel se eliminarán del catálogo.\n` +
-        `Los pedidos se conservarán.\n\n¿Continuar?`
+        `Los ausentes del Excel se conservarán. Si tienen existencia mayor que cero, ` +
+        `seguirán visibles; si tienen existencia cero, se ocultarán al público.\n\n¿Continuar?`
       )) return;
       $("importar").disabled = true;
       try {
@@ -692,7 +693,7 @@
         // Leer el catálogo actual para conservar las fotos existentes.
         const { data: actuales, error: errorActuales } = await cliente
           .from("productos")
-          .select("id,codigo,imagen_url");
+          .select("id,codigo,imagen_url,existencia,activo");
         if (errorActuales) throw errorActuales;
         const actualesPorCodigo = new Map(
           (actuales || []).map(p => [normalizar(p.codigo), p])
@@ -741,24 +742,29 @@
             actualizado_en: new Date().toISOString()
           });
         }
-        // Insertar/actualizar antes de eliminar productos ausentes.
+        // Guardar primero los productos incluidos en el Excel.
         const { error: errorGuardar } = await cliente
           .from("productos")
           .upsert(salida, { onConflict: "codigo" });
         if (errorGuardar) throw errorGuardar;
+
+        // Conservar los productos ausentes del Excel y ajustar su visibilidad:
+        // existencia mayor que cero = visible; existencia cero = oculto.
         const codigosNuevos = new Set(salida.map(p => normalizar(p.codigo)));
-        const idsEliminar = (actuales || [])
-          .filter(p => !codigosNuevos.has(normalizar(p.codigo)))
-          .map(p => p.id);
-        if (idsEliminar.length) {
-          const { error: errorEliminar } = await cliente
+        const ausentes = (actuales || []).filter(
+          p => !codigosNuevos.has(normalizar(p.codigo))
+        );
+        for (const p of ausentes) {
+          const debeEstarActivo = Number(p.existencia || 0) > 0;
+          if (Boolean(p.activo) === debeEstarActivo) continue;
+          const { error: errorVisibilidad } = await cliente
             .from("productos")
-            .delete()
-            .in("id", idsEliminar);
-          if (errorEliminar) {
+            .update({ activo: debeEstarActivo })
+            .eq("id", p.id);
+          if (errorVisibilidad) {
             throw new Error(
-              "Los productos se actualizaron, pero no se pudieron " +
-              "eliminar todos los que faltaban: " + errorEliminar.message
+              `El catálogo se importó, pero no se pudo actualizar la ` +
+              `visibilidad del producto ${p.codigo}: ${errorVisibilidad.message}`
             );
           }
         }
