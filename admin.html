@@ -539,7 +539,7 @@
       $("guardarProducto").disabled = true;
       try {
         const id = $("productoId").value;
-        const anterior = productos.find(p => p.id === id);
+        const anterior = productos.find(p => String(p.id) === id);
         const codigo = $("codigo").value.trim();
         const registro = {
           codigo,
