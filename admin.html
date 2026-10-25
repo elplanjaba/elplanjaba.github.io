@@ -821,7 +821,8 @@ registros.push({
          
 const nombreFoto = normalizar(nombreArchivo);
 
-        
+          );
+
           
 if (!fotos.has(nombreFoto)) {
   const blob = await entrada.async("blob");
@@ -939,11 +940,11 @@ const archivoFoto = p.foto ? fotos.get(normalizar(p.foto)) : null;
             codigo: p.codigo,
             nombre: p.nombre,
             descripcion: p.descripcion,
-            categoria: categoria.nombre,
+            categoria_id: categoria.id,
             precio: p.precio,
             existencia: p.existencia,
             imagen_url: imagen,
-            
+            activo: true,
             
 subcategoria: p.subcategoria || null,
 presentacion: p.presentacion || null,
