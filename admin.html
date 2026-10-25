@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración | El Plan Jaba</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <style>
+    :root {
+      --azul: #17324d;
+      --rojo: #c83b3b;
+      --crema: #fff8e8;
+      --verde: #287a4b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--crema);
+      font-family: Arial, sans-serif;
+      color: var(--azul);
+    }
+
+    .panel {
+      width: 100%;
+      max-width: 420px;
+      padding: 28px;
+      background: white;
+      border: 2px solid var(--azul);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px #17324d20;
+    }
+
+    h1 { margin: 0 0 8px; text-align: center; }
+    .subtitulo { text-align: center; margin-bottom: 26px; }
+
+    label {
+      display: block;
+      margin: 16px 0 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #aab5bf;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 22px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--azul);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; cursor: wait; }
+
+    #mensaje {
+      margin-top: 18px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .nota {
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #526170;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="panel">
+    <h1>El Plan Jaba</h1>
+    <p class="subtitulo">Panel privado de administración</p>
+
+    <form id="formulario">
+      <label for="correo">Correo electrónico</label>
+      <input id="correo" type="email" autocomplete="username"
+             required>
+
+      <label for="clave">Contraseña</label>
+      <input id="clave" type="password"
+             autocomplete="current-password" required>
+
+      <button id="entrar" type="submit">Iniciar sesión</button>
+    </form>
+
+    <p id="mensaje" role="status" aria-live="polite"></p>
+
+    <p class="nota">
+      Acceso exclusivo para personal autorizado.
+      No compartas tus credenciales.
+    </p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    const formulario = document.getElementById("formulario");
+    const boton = document.getElementById("entrar");
+    const mensaje = document.getElementById("mensaje");
+
+    formulario.addEventListener("submit", async function(evento) {
+      evento.preventDefault();
+
+      mensaje.textContent = "";
+      boton.disabled = true;
+
+      try {
+        if (
+          typeof SUPABASE_URL === "undefined" ||
+          typeof SUPABASE_PUBLISHABLE_KEY === "undefined" ||
+          !SUPABASE_URL.startsWith("https://") ||
+          !SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")
+        ) {
+          throw new Error("Revisa la configuración de Supabase.");
+        }
+
+        const cliente = window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_PUBLISHABLE_KEY
+        );
+
+        const { data, error } = await cliente.auth.signInWithPassword({
+          email: document.getElementById("correo").value.trim(),
+          password: document.getElementById("clave").value
+        });
+
+        if (error) throw error;
+
+        const { data: autorizacion, error: errorAutorizacion } =
+          await cliente
+            .from("administradores")
+            .select("user_id")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+
+        if (errorAutorizacion) throw errorAutorizacion;
+
+        if (!autorizacion) {
+          await cliente.auth.signOut();
+          throw new Error("Esta cuenta no está autorizada como administradora.");
+        }
+
+        mensaje.style.color = "var(--verde)";
+        mensaje.textContent =
+          "Acceso autorizado. El inicio de sesión funciona; el panel de gestión se configurará en el siguiente paso.";
+
+      } catch (error) {
+        mensaje.style.color = "var(--rojo)";
+        mensaje.textContent =
+          error.message || "No se pudo iniciar sesión.";
+      } finally {
+        boton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
