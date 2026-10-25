@@ -750,27 +750,8 @@
         const existencia = numero(obtenerCampo(fila,
           ["existencia", "existencias", "stock", "cantidad"]));
 
-        
-const descripcion = String(obtenerCampo(fila,
-  ["descripcion", "detalle"]) ?? "").trim();
-
-const subcategoria = String(obtenerCampo(fila,
-  ["subcategoria"]) ?? "").trim();
-
-const presentacion = String(obtenerCampo(fila,
-  ["presentacion"]) ?? "").trim();
-
-const marca = String(obtenerCampo(fila,
-  ["marca"]) ?? "").trim();
-
-const foto = String(obtenerCampo(fila,
-  ["foto", "imagen", "nombrearchivo"]) ?? "").trim();
-
-const estadoTexto = normalizar(obtenerCampo(fila, ["estado"]) ?? "activo");
-
-const activo = ["activo", "activa", "si", "sí", "true", "1"]
-  .includes(estadoTexto);
-
+        const descripcion = String(obtenerCampo(fila,
+          ["descripcion", "detalle"]) ?? "").trim();
 
         if (!codigo || !nombre || !categoria ||
             !Number.isFinite(precio) || precio < 0 ||
@@ -788,21 +769,15 @@ const activo = ["activo", "activa", "si", "sí", "true", "1"]
         }
 
         codigos.add(clave);
-       
-registros.push({
-  codigo,
-  nombre,
-  descripcion,
-  subcategoria,
-  presentacion,
-  marca,
-  foto,
-  activo,
-  categoria,
-  precio,
-  existencia
-});
-
+        registros.push({
+          codigo,
+          nombre,
+          descripcion,
+          categoria,
+          precio,
+          existencia
+        });
+      }
 
       const zipArchivo = $("archivoZip").files[0];
       let fotos = new Map();
@@ -818,20 +793,17 @@ registros.push({
 
           if (!["jpg", "jpeg", "png", "webp"].includes(extension)) continue;
 
-         
-const nombreFoto = normalizar(nombreArchivo);
-
+          const codigoFoto = normalizar(
+            nombreArchivo.replace(/\.[^.]+$/, "")
           );
 
-          
-if (!fotos.has(nombreFoto)) {
-  const blob = await entrada.async("blob");
-  const mime = extension === "png" ? "image/png" :
-    extension === "webp" ? "image/webp" : "image/jpeg";
+          if (!fotos.has(codigoFoto)) {
+            const blob = await entrada.async("blob");
+            const mime = extension === "png" ? "image/png" :
+              extension === "webp" ? "image/webp" : "image/jpeg";
 
-  fotos.set(nombreFoto, new File([blob], nombreArchivo, { type: mime }));
-}
-
+            fotos.set(codigoFoto, new File([blob], nombreArchivo, { type: mime }));
+          }
         }
       }
 
@@ -928,9 +900,7 @@ if (!fotos.has(nombreFoto)) {
 
           const anterior = actualesPorCodigo.get(normalizar(p.codigo));
           let imagen = anterior?.imagen_url || null;
-       
-const archivoFoto = p.foto ? fotos.get(normalizar(p.foto)) : null;
-;
+          const archivoFoto = fotos.get(normalizar(p.codigo));
 
           if (archivoFoto) {
             imagen = await subirFoto(archivoFoto, p.codigo);
@@ -945,31 +915,34 @@ const archivoFoto = p.foto ? fotos.get(normalizar(p.foto)) : null;
             existencia: p.existencia,
             imagen_url: imagen,
             activo: true,
-            
-subcategoria: p.subcategoria || null,
-presentacion: p.presentacion || null,
-marca: p.marca || null,
-activo: p.activo,
-
             actualizado_en: new Date().toISOString()
           });
         }
 
-               // Importar el catálogo mediante la función segura de Supabase.
-        const { data: resultado, error: errorGuardar } = await cliente
-          .rpc("importar_catalogo", {
-            p_productos: salida,
-            p_reemplazar: false
-          });
+        // Insertar/actualizar antes de eliminar productos ausentes.
+        const { error: errorGuardar } = await cliente
+          .from("productos")
+          .upsert(salida, { onConflict: "codigo" });
 
         if (errorGuardar) throw errorGuardar;
 
-        mostrarMensaje(
-          "Importación completada. Productos procesados: " +
-          resultado.procesados +
-          ". Productos eliminados: " +
-          resultado.eliminados + "."
-        );
+        const codigosNuevos = new Set(salida.map(p => normalizar(p.codigo)));
+
+        const idsEliminar = (actuales || [])
+          .filter(p => !codigosNuevos.has(normalizar(p.codigo)))
+          .map(p => p.id);
+
+        if (idsEliminar.length) {
+          const { error: errorEliminar } = await cliente
+            .from("productos")
+            .delete()
+            .in("id", idsEliminar);
+
+          if (errorEliminar) {
+            throw new Error(
+              "Los productos se actualizaron, pero no se pudieron " +
+              "eliminar todos los que faltaban: " + errorEliminar.message
+            );
           }
         }
 
