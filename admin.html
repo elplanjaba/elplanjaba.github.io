@@ -750,8 +750,27 @@
         const existencia = numero(obtenerCampo(fila,
           ["existencia", "existencias", "stock", "cantidad"]));
 
-        const descripcion = String(obtenerCampo(fila,
-          ["descripcion", "detalle"]) ?? "").trim();
+        
+const descripcion = String(obtenerCampo(fila,
+  ["descripcion", "detalle"]) ?? "").trim();
+
+const subcategoria = String(obtenerCampo(fila,
+  ["subcategoria"]) ?? "").trim();
+
+const presentacion = String(obtenerCampo(fila,
+  ["presentacion"]) ?? "").trim();
+
+const marca = String(obtenerCampo(fila,
+  ["marca"]) ?? "").trim();
+
+const foto = String(obtenerCampo(fila,
+  ["foto", "imagen", "nombrearchivo"]) ?? "").trim();
+
+const estadoTexto = normalizar(obtenerCampo(fila, ["estado"]) ?? "activo");
+
+const activo = ["activo", "activa", "si", "sí", "true", "1"]
+  .includes(estadoTexto);
+
 
         if (!codigo || !nombre || !categoria ||
             !Number.isFinite(precio) || precio < 0 ||
@@ -769,15 +788,21 @@
         }
 
         codigos.add(clave);
-        registros.push({
-          codigo,
-          nombre,
-          descripcion,
-          categoria,
-          precio,
-          existencia
-        });
-      }
+       
+registros.push({
+  codigo,
+  nombre,
+  descripcion,
+  subcategoria,
+  presentacion,
+  marca,
+  foto,
+  activo,
+  categoria,
+  precio,
+  existencia
+});
+
 
       const zipArchivo = $("archivoZip").files[0];
       let fotos = new Map();
@@ -793,17 +818,20 @@
 
           if (!["jpg", "jpeg", "png", "webp"].includes(extension)) continue;
 
-          const codigoFoto = normalizar(
-            nombreArchivo.replace(/\.[^.]+$/, "")
+         
+const nombreFoto = normalizar(nombreArchivo);
+
           );
 
-          if (!fotos.has(codigoFoto)) {
-            const blob = await entrada.async("blob");
-            const mime = extension === "png" ? "image/png" :
-              extension === "webp" ? "image/webp" : "image/jpeg";
+          
+if (!fotos.has(nombreFoto)) {
+  const blob = await entrada.async("blob");
+  const mime = extension === "png" ? "image/png" :
+    extension === "webp" ? "image/webp" : "image/jpeg";
 
-            fotos.set(codigoFoto, new File([blob], nombreArchivo, { type: mime }));
-          }
+  fotos.set(nombreFoto, new File([blob], nombreArchivo, { type: mime }));
+}
+
         }
       }
 
@@ -900,7 +928,9 @@
 
           const anterior = actualesPorCodigo.get(normalizar(p.codigo));
           let imagen = anterior?.imagen_url || null;
-          const archivoFoto = fotos.get(normalizar(p.codigo));
+       
+const archivoFoto = p.foto ? fotos.get(normalizar(p.foto)) : null;
+;
 
           if (archivoFoto) {
             imagen = await subirFoto(archivoFoto, p.codigo);
@@ -915,6 +945,12 @@
             existencia: p.existencia,
             imagen_url: imagen,
             activo: true,
+            
+subcategoria: p.subcategoria || null,
+presentacion: p.presentacion || null,
+marca: p.marca || null,
+activo: p.activo,
+
             actualizado_en: new Date().toISOString()
           });
         }
