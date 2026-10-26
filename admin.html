@@ -255,10 +255,10 @@
           Selecciona un archivo Excel (.xlsx o .xls) y, opcionalmente,
           un ZIP con fotografías. La primera fila debe contener los
           encabezados. Se aceptan estos nombres:
-          <strong>codigo, nombre, descripcion, categoria, precio,
-          existencia</strong>. También se aceptan algunos encabezados
-          equivalentes en español, como código, producto y stock.
-          Las categorías deben existir o se crearán durante la importación.
+          <strong>Codigo, Nombre, Categoria, SubCategoria, Descripcion,
+          Presentacion, Marca, Precio Venta, Stock, Foto y Estado</strong>.
+          Las categorías que falten se crearán durante la importación.
+          Los productos ausentes no se borran: su visibilidad depende de las existencias.
         </p>
         <label>
           Archivo Excel
@@ -591,51 +591,62 @@
       const libro = XLSX.read(bytes, { type: "array" });
       const hoja = libro.Sheets[libro.SheetNames[0]];
       if (!hoja) throw new Error("El archivo Excel no contiene una hoja.");
-      const filas = XLSX.utils.sheet_to_json(hoja, {
-        defval: "",
-        raw: true
-      });
+      const filas = XLSX.utils.sheet_to_json(hoja, { defval: "", raw: true });
       if (!filas.length) throw new Error("La hoja no contiene productos.");
+
+      const encabezados = Object.keys(filas[0]).map(normalizar);
+      const requeridos = [
+        ["codigo", "codigoproducto", "sku"],
+        ["nombre", "producto", "nombreproducto"],
+        ["categoria", "tipoproducto"],
+        ["subcategoria"],
+        ["descripcion", "detalle"],
+        ["presentacion", "formato"],
+        ["marca"],
+        ["precioventa", "precio", "precioactual"],
+        ["stock", "existencia", "existencias", "cantidad"],
+        ["foto", "fotografia", "imagen"],
+        ["estado"]
+      ];
+      for (const grupo of requeridos) {
+        if (!grupo.some(nombre => encabezados.includes(nombre))) {
+          throw new Error("Falta un encabezado obligatorio: " + grupo[0] + ".");
+        }
+      }
+
       const codigos = new Set();
       const registros = [];
       for (let i = 0; i < filas.length; i++) {
         const fila = filas[i];
-        const codigo = String(obtenerCampo(fila,
-          ["codigo", "codigoproducto", "sku"]) ?? "").trim();
-        const nombre = String(obtenerCampo(fila,
-          ["nombre", "producto", "nombreproducto"]) ?? "").trim();
-        const categoria = String(obtenerCampo(fila,
-          ["categoria", "tipoproducto"]) ?? "").trim();
-        const precio = numero(obtenerCampo(fila,
-          ["precio", "precioventa", "precioactual"]));
-        const existencia = numero(obtenerCampo(fila,
-          ["existencia", "existencias", "stock", "cantidad"]));
-        const descripcion = String(obtenerCampo(fila,
-          ["descripcion", "detalle"]) ?? "").trim();
-        if (!codigo || !nombre || !categoria ||
-            !Number.isFinite(precio) || precio < 0 ||
+        const codigo = String(obtenerCampo(fila, ["codigo", "codigoproducto", "sku"]) ?? "").trim();
+        const nombre = String(obtenerCampo(fila, ["nombre", "producto", "nombreproducto"]) ?? "").trim();
+        const categoria = String(obtenerCampo(fila, ["categoria", "tipoproducto"]) ?? "").trim();
+        const precio = numero(obtenerCampo(fila, ["precioventa", "precio", "precioactual"]));
+        const existencia = numero(obtenerCampo(fila, ["stock", "existencia", "existencias", "cantidad"]));
+        const descripcion = String(obtenerCampo(fila, ["descripcion", "detalle"]) ?? "").trim();
+        const subcategoria = String(obtenerCampo(fila, ["subcategoria", "subcategoria producto"]) ?? "").trim();
+        const presentacion = String(obtenerCampo(fila, ["presentacion", "formato"]) ?? "").trim();
+        const marca = String(obtenerCampo(fila, ["marca"]) ?? "").trim();
+        const foto = String(obtenerCampo(fila, ["foto", "fotografia", "imagen"]) ?? "").trim();
+        const estadoTexto = String(obtenerCampo(fila, ["estado"]) ?? "").trim().toLowerCase();
+        let activo;
+        if (estadoTexto === "activo") activo = true;
+        else if (estadoTexto === "inactivo") activo = false;
+        else throw new Error(`Fila ${i + 2}: Estado debe ser Activo o Inactivo.`);
+
+        if (!codigo || !nombre || !categoria || !Number.isFinite(precio) || precio < 0 ||
             !Number.isInteger(existencia) || existencia < 0) {
-          throw new Error(
-            `Fila ${i + 2}: falta código, nombre o categoría, ` +
-            `o el precio/existencia no es válido.`
-          );
+          throw new Error(`Fila ${i + 2}: falta código, nombre o categoría, o el precio/stock no es válido.`);
         }
         const clave = normalizar(codigo);
-        if (codigos.has(clave)) {
-          throw new Error(`Código duplicado en Excel: ${codigo}`);
-        }
+        if (codigos.has(clave)) throw new Error(`Código duplicado en Excel: ${codigo}`);
         codigos.add(clave);
-        registros.push({
-          codigo,
-          nombre,
-          descripcion,
-          categoria,
-          precio,
-          existencia
-        });
+        registros.push({ codigo, nombre, categoria, descripcion, subcategoria,
+          presentacion, marca, precio, existencia, foto, activo });
       }
+
       const zipArchivo = $("archivoZip").files[0];
-      let fotos = new Map();
+      const fotos = new Map();
       if (zipArchivo) {
         const zip = await JSZip.loadAsync(zipArchivo);
         for (const [ruta, entrada] of Object.entries(zip.files)) {
@@ -643,15 +654,11 @@
           const nombreArchivo = ruta.split("/").pop();
           const extension = nombreArchivo.split(".").pop().toLowerCase();
           if (!["jpg", "jpeg", "png", "webp"].includes(extension)) continue;
-          const codigoFoto = normalizar(
-            nombreArchivo.replace(/\.[^.]+$/, "")
-          );
-          if (!fotos.has(codigoFoto)) {
-            const blob = await entrada.async("blob");
-            const mime = extension === "png" ? "image/png" :
-              extension === "webp" ? "image/webp" : "image/jpeg";
-            fotos.set(codigoFoto, new File([blob], nombreArchivo, { type: mime }));
-          }
+          const claveFoto = normalizar(nombreArchivo.replace(/\.[^.]+$/, ""));
+          if (fotos.has(claveFoto)) throw new Error(`Hay fotografías duplicadas para: ${nombreArchivo}`);
+          const blob = await entrada.async("blob");
+          const mime = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+          fotos.set(claveFoto, new File([blob], nombreArchivo, { type: mime }));
         }
       }
       return { registros, fotos };
@@ -668,9 +675,9 @@
           `Validación correcta.\n` +
           `Productos en Excel: ${registros.length}\n` +
           `Fotos encontradas en ZIP: ${fotos.size}\n\n` +
-          `Los productos ausentes del Excel se conservarán: ` +
-          `con existencia mayor que cero seguirán visibles; ` +
-          `con existencia cero quedarán ocultos al público.`;
+          `Los productos ausentes no se borrarán. Si tienen existencias, ` +
+          `seguirán activos; si tienen cero, quedarán inactivos.\n` +
+          `Los estados del Excel deben ser Activo o Inactivo.`;
         $("importar").disabled = false;
         mostrarMensaje("Excel validado. Revisa el resumen antes de confirmar.");
       } catch (error) {
@@ -684,105 +691,85 @@
       const { registros, fotos } = importacionPreparada;
       if (!confirm(
         `Vas a importar ${registros.length} productos.\n` +
-        `Los ausentes del Excel se conservarán. Si tienen existencia mayor que cero, ` +
-        `seguirán visibles; si tienen existencia cero, se ocultarán al público.\n\n¿Continuar?`
+        `No se borrarán productos ausentes del Excel.\n` +
+        `Los productos ausentes con stock mayor que cero seguirán activos; ` +
+        `los que tengan cero quedarán inactivos.\n\n¿Continuar?`
       )) return;
+
       $("importar").disabled = true;
+      $("previsualizar").disabled = true;
+      const fotosSubidas = [];
+      let baseDatosConfirmada = false;
       try {
-        mostrarMensaje("Importando catálogo. No cierres esta página...");
-        // Leer el catálogo actual para conservar las fotos existentes.
+        mostrarMensaje("Preparando catálogo e imágenes. No cierres esta página...");
         const { data: actuales, error: errorActuales } = await cliente
-          .from("productos")
-          .select("id,codigo,imagen_url,existencia,activo");
+          .from("productos").select("id,codigo,imagen_url");
         if (errorActuales) throw errorActuales;
-        const actualesPorCodigo = new Map(
-          (actuales || []).map(p => [normalizar(p.codigo), p])
-        );
-        // Crear las categorías que aún no existan.
-        const nombresCategoria = [
-          ...new Set(registros.map(p => p.categoria.trim()))
-        ];
-        for (const nombre of nombresCategoria) {
-          const existe = categorias.some(
-            c => normalizar(c.nombre) === normalizar(nombre)
-          );
-          if (!existe) {
-            const { error } = await cliente
-              .from("categorias")
-              .insert({ nombre, activa: true });
-            if (error && !String(error.message).toLowerCase().includes("duplicate")) {
-              throw error;
-            }
-          }
-        }
-        await cargarCategorias();
+        const actualesPorCodigo = new Map((actuales || []).map(p => [normalizar(p.codigo), p]));
         const salida = [];
+
         for (const p of registros) {
-          const categoria = categorias.find(
-            c => normalizar(c.nombre) === normalizar(p.categoria)
-          );
-          if (!categoria) {
-            throw new Error(`No se pudo resolver la categoría: ${p.categoria}`);
-          }
           const anterior = actualesPorCodigo.get(normalizar(p.codigo));
           let imagen = anterior?.imagen_url || null;
-          const archivoFoto = fotos.get(normalizar(p.codigo));
+          const referenciaFoto = p.foto ? p.foto.split("/").pop().replace(/\.[^.]+$/, "") : p.codigo;
+          const archivoFoto = fotos.get(normalizar(referenciaFoto)) || fotos.get(normalizar(p.codigo));
           if (archivoFoto) {
             imagen = await subirFoto(archivoFoto, p.codigo);
+            fotosSubidas.push(imagen);
           }
           salida.push({
             codigo: p.codigo,
             nombre: p.nombre,
+            categoria: p.categoria,
             descripcion: p.descripcion,
-            categoria_id: categoria.id,
+            subcategoria: p.subcategoria,
+            presentacion: p.presentacion,
+            marca: p.marca,
             precio: p.precio,
             existencia: p.existencia,
             imagen_url: imagen,
-            activo: true,
-            actualizado_en: new Date().toISOString()
+            activo: p.activo
           });
         }
-        // Guardar primero los productos incluidos en el Excel.
-        const { error: errorGuardar } = await cliente
-          .from("productos")
-          .upsert(salida, { onConflict: "codigo" });
-        if (errorGuardar) throw errorGuardar;
 
-        // Conservar los productos ausentes del Excel y ajustar su visibilidad:
-        // existencia mayor que cero = visible; existencia cero = oculto.
-        const codigosNuevos = new Set(salida.map(p => normalizar(p.codigo)));
-        const ausentes = (actuales || []).filter(
-          p => !codigosNuevos.has(normalizar(p.codigo))
+        mostrarMensaje("Guardando cambios de forma transaccional...");
+        const { data: resultado, error: errorGuardar } = await cliente.rpc(
+          "importar_catalogo_seguro", { p_registros: salida }
         );
-        for (const p of ausentes) {
-          const debeEstarActivo = Number(p.existencia || 0) > 0;
-          if (Boolean(p.activo) === debeEstarActivo) continue;
-          const { error: errorVisibilidad } = await cliente
-            .from("productos")
-            .update({ activo: debeEstarActivo })
-            .eq("id", p.id);
-          if (errorVisibilidad) {
-            throw new Error(
-              `El catálogo se importó, pero no se pudo actualizar la ` +
-              `visibilidad del producto ${p.codigo}: ${errorVisibilidad.message}`
-            );
-          }
-        }
+        if (errorGuardar) throw errorGuardar;
+        baseDatosConfirmada = true;
+        importacionPreparada = null;
+
+        await cargarCategorias();
         await cargarProductos();
         importacionPreparada = null;
         $("archivoExcel").value = "";
         $("archivoZip").value = "";
         $("resumenImportacion").textContent = "";
-        mostrarMensaje("Importación terminada correctamente.");
+        const procesados = resultado?.procesados ?? registros.length;
+        const ausentes = resultado?.ausentes_actualizados ?? 0;
+        mostrarMensaje(`Importación completada. Productos procesados: ${procesados}. Productos ausentes conservados y revisados: ${ausentes}.`);
       } catch (error) {
+        // Las fotos están fuera de la transacción SQL; intentar limpiar las subidas de esta ejecución.
+        if (!baseDatosConfirmada && fotosSubidas.length) {
+          try {
+            await cliente.storage.from(BUCKET).remove(fotosSubidas);
+          } catch (_) {
+            // No ocultar el error original si el almacenamiento no permite limpiar.
+          }
+        }
         mostrarMensaje(
-          "La importación no pudo completarse por completo: " +
+          (baseDatosConfirmada
+            ? "La importación quedó guardada, pero hubo un error al actualizar la vista: "
+            : "La importación fue cancelada o revertida: ") +
           (error.message || "error desconocido") +
-          "\nRevisa el catálogo antes de volver a intentarlo.",
+          (baseDatosConfirmada ? ". Actualiza la página para volver a cargar el catálogo."
+            : ". La transacción de la base de datos se revirtió; no se guardaron cambios parciales."),
           true
         );
       } finally {
-        $("importar").disabled = true;
+        $("importar").disabled = !importacionPreparada;
+        $("previsualizar").disabled = false;
       }
     });
     async function iniciar() {
