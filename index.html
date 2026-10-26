@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>El Plan Jaba | Tienda online</title>
   <meta name="description" content="Consulta nuestro catálogo de productos disponibles en El Plan Jaba.">
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
   <style>
     :root {
       --green: #28664b;
@@ -626,11 +627,7 @@
 
   <script>
     // Catálogo real importado de Inventario_24-Oct-26(1).xlsx. No contiene productos de muestra.
-    const products = [
-      { id: "ALI001", code: "ALI001", name: "Aceite Soya", category: "Alimentos", subcategory: "Aceites y Grasas", description: "Aceite de soya de 900ml.", presentation: "Pomo de 900ml.", price: 2850, stock: 5, photo: "Aceite_Soya_ALI001.jpg", status: "Act" },
-      { id: "ALI002", code: "ALI002", name: "Azucar Blanca", category: "Alimentos", subcategory: "Secos", description: "Azucar Blanca Cristalina.", presentation: "Pqte de 1 Kg.", price: 1250, stock: 12, photo: "Azucar_Blanca_ALI002.jpg", status: "Act" }
-    ];
-
+    let products = [];
     let selectedCategory = "Todos";
     let searchTerm = "";
     const CART_STORAGE_KEY = "elPlanJaba.cart.v2";
@@ -887,8 +884,95 @@
       if (event.target === accountOverlay) closeAccount();
     });
 
+    // Convierte la ruta guardada en Supabase en la URL de la fotografía.
+function obtenerUrlFoto(ruta) {
+  if (!ruta) return "";
+
+  // Si ya es una URL completa, se utiliza directamente.
+  if (/^https?:\/\//i.test(ruta)) return ruta;
+
+  const { data } = clienteSupabase.storage
+    .from("Productos")
+    .getPublicUrl(ruta);
+
+  return data.publicUrl;
+}
+
+// Carga los productos activos desde la base de datos.
+async function cargarCatalogoSupabase() {
+  grid.innerHTML = '<div class="empty">Cargando catálogo...</div>';
+
+  try {
+    if (
+      typeof SUPABASE_URL === "undefined" ||
+      typeof SUPABASE_PUBLISHABLE_KEY === "undefined"
+    ) {
+      throw new Error("Falta la configuración de Supabase.");
+    }
+
+    clienteSupabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const { data, error } = await clienteSupabase
+      .from("productos")
+      .select("*, categorias(nombre)")
+      .eq("activo", true)
+      .order("nombre");
+
+    if (error) throw error;
+
+    products = (data || []).map(p => ({
+      id: String(p.codigo),
+      code: p.codigo,
+      name: p.nombre,
+      category: p.categorias?.nombre || "",
+      subcategory: p.subcategoria || "",
+      description: p.descripcion || "",
+      presentation: p.presentacion || "",
+      price: Number(p.precio) || 0,
+      stock: Number(p.existencia) || 0,
+      photo: obtenerUrlFoto(p.imagen_url),
+      status: p.activo ? "Act" : ""
+    }));
+
+    // Recupera las cantidades guardadas que sigan siendo válidas.
+    try {
+      const savedCart = JSON.parse(
+        localStorage.getItem(CART_STORAGE_KEY) || "[]"
+      );
+
+      if (Array.isArray(savedCart)) {
+        savedCart.forEach(([id, qty]) => {
+          const product = products.find(p => p.id === String(id));
+          const quantity = Number(qty);
+
+          if (
+            product &&
+            Number.isInteger(quantity) &&
+            quantity > 0 &&
+            product.stock > 0
+          ) {
+            cart.set(product.id, Math.min(quantity, product.stock));
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("No se pudo recuperar el carrito guardado.", error);
+    }
+
     renderProducts();
     renderCart();
-  </script>
-</body>
-</html>
+
+  } catch (error) {
+    console.error("Error cargando el catálogo:", error);
+    grid.innerHTML =
+      '<div class="empty">No se pudo cargar el catálogo. ' +
+      'Comprueba la conexión con Supabase y los permisos de lectura.</div>';
+  }
+}
+
+let clienteSupabase;
+
+cargarCatalogoSupabase();
